@@ -4,6 +4,9 @@ local config = wezterm.config_builder()
 config.font = wezterm.font("MesloLGS NF")
 config.font_size = 16
 
+config.initial_cols = 150
+config.initial_rows = 45
+
 config.enable_tab_bar = false
 config.window_decorations = "RESIZE"
 config.window_background_opacity = 0.9

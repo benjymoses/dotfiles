@@ -8,7 +8,8 @@ This repo helps to bootstrap the shell, terminal, prompt, and assorted plugins w
 
 This will install Wezterm, Homebrew, and all necessary packages and configs. More info on each below.
 
-> [!note] This repo uses GNU Stash to symlink config files from ~/dotfiles to the right path in the home directory.
+> [!NOTE]
+> This repo uses GNU Stow to symlink config files from ~/dotfiles to the right path in the home directory.
 
 ## Configs
 
