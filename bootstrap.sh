@@ -62,6 +62,8 @@ packages=(
     "wezterm"
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"
+    "font-fira-code-nerd-font"
+    "font-meslo.lg-nerd-font"
 )
 
 for package in "${packages[@]}"; do
@@ -72,23 +74,6 @@ for package in "${packages[@]}"; do
         brew install "$package"
     fi
 done
-
-# Install MesloLGS NF font
-FONT_DIR="$HOME/Library/Fonts"
-FONT_NAME="MesloLGS NF"
-
-if ! ls "$FONT_DIR"/*MesloLGS* &>/dev/null; then
-    log "Installing $FONT_NAME font..."
-    mkdir -p "$FONT_DIR"
-    cd /tmp
-    curl -fLo "MesloLGS NF Regular.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
-    curl -fLo "MesloLGS NF Bold.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
-    curl -fLo "MesloLGS NF Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
-    curl -fLo "MesloLGS NF Bold Italic.ttf" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
-    mv MesloLGS*.ttf "$FONT_DIR/"
-else
-    log "$FONT_NAME font already installed"
-fi
 
 # Remove ~/.zshrc if it's a file (not symlink)
 if [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ]; then

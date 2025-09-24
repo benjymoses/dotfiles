@@ -47,4 +47,4 @@ This will install Wezterm, Homebrew, and all necessary packages and configs. Mor
 - Wget - File downloader  
 
 **Font**  
-- MesloLGS NF - Nerd Font for terminal icons
+- FiraCode Nerd Font - Nerd Font for terminal icons

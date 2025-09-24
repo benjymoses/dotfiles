@@ -52,7 +52,7 @@ eval "$(zoxide init zsh)"
 alias cd="z"
 
 # eza
-alias ls="eza --icons=always"
+alias ls="eza --icons --color=always"
 
 # Amazon Q post block. Keep at the bottom of this file.
 [[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
