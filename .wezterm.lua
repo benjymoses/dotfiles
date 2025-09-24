@@ -9,6 +9,20 @@ config.window_decorations = "RESIZE"
 config.window_background_opacity = 0.9
 config.macos_window_background_blur = 15
 
+-- Fix for ALT+LEFT and ALT+RIGHT in MacOS
+config.keys = {
+  {
+  key = "LeftArrow",
+  mods = "ALT",
+  action = wezterm.action.SendString("\x1bb"),
+  },
+  {
+  key = "RightArrow",
+  mods = "ALT",
+  action = wezterm.action.SendString("\x1bf")
+  }
+}
+
 -- "Macchiato" or "Mocha"
 config.color_scheme = "Catppuccin Mocha" 
 

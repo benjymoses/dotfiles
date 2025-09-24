@@ -1,5 +1,5 @@
 vim.g.mapleader = " "
 
-require("benmoses.lazy_init")
-require("benmoses.set")
-require("benmoses.remap")
+require("personal.lazy_init")
+require("personal.set")
+require("personal.remap")

@@ -12,7 +12,7 @@ export HOMEBREW_NO_ENV_HINTS=1
 plugins=(git)
 
 function mkcode() {
-  mkdir -p /Users/benmoses/Documents/code/$1; code /Users/benmoses/Documents/code/$1;
+  mkdir -p $HOME/Documents/code/$1; code $HOME/Documents/code/$1;
 }
 
 export NVM_DIR="$HOME/.nvm"
@@ -20,7 +20,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # pnpm
-export PNPM_HOME="/Users/benmoses/Library/pnpm"
+export PNPM_HOME="$HOME/Library/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;
