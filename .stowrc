@@ -1,7 +1,6 @@
---verbose
---target=/Users/benmoses
 --ignore=\.git
 --ignore=\.gitignore
 --ignore=\README.*
 --ignore=\.stowrc
 --ignore=\.DS_Store
+--ignore=bootstrap.sh
