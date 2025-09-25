@@ -57,13 +57,13 @@ packages=(
     "luarocks"
     "wget"
     "fd"
-    "gnu-stow"
+    "stow"
     "uv"
     "wezterm"
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"
     "font-fira-code-nerd-font"
-    "font-meslo.lg-nerd-font"
+    "font-meslo-lg-nerd-font"
 )
 
 for package in "${packages[@]}"; do
@@ -85,6 +85,10 @@ fi
 log "Configuring dotfiles with stow..."
 cd "$HOME/dotfiles"
 stow .
+
+# Clone TPM for TMUX
+git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
+
 
 log "Bootstrap complete!"
 echo ""

@@ -13,6 +13,17 @@ config.window_decorations = "RESIZE"
 config.window_background_opacity = 0.9
 config.macos_window_background_blur = 15
 
+config.window_frame = {
+  border_left_width = "0.5cell",
+  border_right_width = "0.5cell",
+  border_bottom_height = "0.25cell",
+  border_top_height = "1cell",
+  border_left_color = "black",
+  border_right_color = "black",
+  border_bottom_color = "black",
+  border_top_color = "black",
+}
+
 -- Fix for ALT+LEFT and ALT+RIGHT in MacOS
 config.keys = {
   {
