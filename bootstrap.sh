@@ -173,6 +173,7 @@ packages=(
     "fd"
     "stow"
     "uv"
+    "pyenv"
     "wezterm"
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"

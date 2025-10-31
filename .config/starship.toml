@@ -22,6 +22,7 @@ $haskell\
 $python\
 [](fg:teal bg:blue)\
 $docker_context\
+$aws\
 [](fg:blue bg:purple)\
 [ ](fg:purple)\
 $fill\
@@ -109,7 +110,7 @@ Ubuntu = "󰕈"
 SUSE = ""
 Raspbian = "󰐿"
 Mint = "󰣭"
-Macos = "󰀵"
+Macos = "󰀵 "
 Manjaro = ""
 Linux = "󰌽"
 Gentoo = "󰣨"
@@ -127,7 +128,7 @@ RedHatEnterprise = "󱄛"
 Pop = ""
 
 [username]
-show_always = true
+show_always = false
 style_user = "bg:surface0 fg:text"
 style_root = "bg:surface0 fg:text"
 format = '[ $user ]($style)'
@@ -137,6 +138,7 @@ style = "fg:mantle bg:peach"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
+truncate_to_repo = true
 
 [directory.substitutions]
 "Documents" = "󰈙 "
@@ -168,14 +170,16 @@ min_time = 500
 format = "took [$duration   ](bold yellow)"
 
 [aws]
-format = 'on [$symbol($profile )(\($region\) )]($style)'
-style = 'bold blue'
-symbol = '🅰 '
+format = '[ $symbol $profile ](fg:base bg:blue)[(\($region\))](fg:base bg:blue dimmed)'
+style = 'bg:blue'
+#symbol = '☁️'
+symbol = '󰸏'
+
 [aws.region_aliases]
-eu-west-1 = 'dub'
-us-east-1 = 'va'
-[aws.profile_aliases]
-MyProfileNameFromConfig = 'DisplayName'
+eu-west-1 = 'euw1'
+us-east-1 = 'use1'
+#[aws.profile_aliases]
+#benmoses-Admin = 'default (Admin)'
 
 [nodejs]
 symbol = ""

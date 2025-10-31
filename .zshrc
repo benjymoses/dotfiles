@@ -1,5 +1,5 @@
-# Amazon Q pre block. Keep at the top of this file.
-[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.pre.zsh"
+export EDITOR="nvim"
+export SUDO_EDITOR="$EDITOR"
 
 # Homebrew
 eval "$(/opt/homebrew/bin/brew shellenv)"
@@ -11,8 +11,17 @@ export HOMEBREW_NO_ENV_HINTS=1
 
 plugins=(git)
 
+if [[ -d "/opt/homebrew/share/zsh/site-functions" ]]; then
+  fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
+fi
+
+# Functions (load immediately as they might be used)
 function mkcode() {
   mkdir -p $HOME/Documents/code/$1; code $HOME/Documents/code/$1;
+}
+
+function mkkiro() {
+  mkdir -p $HOME/Documents/code/$1; kiro $HOME/Documents/code/$1;
 }
 
 export PYENV_ROOT="$HOME/.pyenv"
@@ -58,5 +67,4 @@ alias cd="z"
 # eza
 alias ls="eza --icons --color=always"
 
-# Amazon Q post block. Keep at the bottom of this file.
-[[ -f "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh" ]] && builtin source "${HOME}/Library/Application Support/amazon-q/shell/zshrc.post.zsh"
+[[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
