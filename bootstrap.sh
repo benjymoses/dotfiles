@@ -190,7 +190,10 @@ for package in "${packages[@]}"; do
     fi
 done
 
-# Remove ~/.zshrc if it's a file (not symlink) - handled by backup_configs now
+# Archive old NVIM cache if exists
+mv ~/.local/share/nvim{,.bak}
+mv ~/.local/state/nvim{,.bak}
+mv ~/.cache/nvim{,.bak}
 
 # Run stow from dotfiles directory
 log "Configuring dotfiles with stow..."

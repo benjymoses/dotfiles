@@ -61,10 +61,12 @@ export FZF_DEFAULT_OPTS="--preview 'bat --color=always {}'"
 eval "$(starship init zsh)"
 
 # Zoxide
-eval "$(zoxide init zsh)"
-alias cd="z"
+eval "$(zoxide init zsh --cmd cd)"
 
 # eza
-alias ls="eza --icons --color=always"
+alias ls="eza --icons --color=always --group-directories-first"
 
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
+
+# Allows local environment overrides or additions
+source ~/.zshrc-local
