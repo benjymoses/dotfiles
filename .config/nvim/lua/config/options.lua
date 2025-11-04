@@ -7,3 +7,5 @@ vim.opt.incsearch = true
 vim.o.autoread = true -- live reloading of files
 
 vim.g.lazyvim_prettier_needs_config = true --ensures Biome takes priority
+
+vim.opt.wrap = true
