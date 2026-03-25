@@ -116,6 +116,25 @@ backup_configs() {
     done < <(find "$HOME/dotfiles/.config" -type f -print0)
   fi
 
+  # Backup ~/.zprofile
+  if [ -e "$HOME/.zprofile" ]; then
+    log "Backing up ~/.zprofile"
+    cp "$HOME/.zprofile" "$backup_dir/"
+    needs_backup=true
+  fi
+
+  # Backup NVIM local data, state, and cache
+  for nvim_pair in "$HOME/.local/share/nvim:nvim_local_share" "$HOME/.local/state/nvim:nvim_local_state" "$HOME/.cache/nvim:nvim_cache"; do
+    local src="${nvim_pair%%:*}"
+    local dest_name="${nvim_pair##*:}"
+    if [ -d "$src" ]; then
+      log "Backing up $src"
+      mkdir -p "$backup_dir/$dest_name"
+      mv "$src" "$backup_dir/$dest_name/"
+      needs_backup=true
+    fi
+  done
+
   # Clean plugin directories
   for plugin_dir in "$HOME/.config/nvim/plugins" "$HOME/.config/tmux/plugins"; do
     if [ -d "$plugin_dir" ]; then
@@ -143,10 +162,17 @@ if ! command_exists brew; then
   log "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>~/.zprofile
-  eval "$(/opt/homebrew/bin/brew shellenv)"
 else
   log "Homebrew already installed"
 fi
+
+# Ensure ~/.zprofile has brew shellenv (covers case where Homebrew exists but zprofile was deleted)
+if ! grep -q 'brew shellenv' ~/.zprofile 2>/dev/null; then
+  log "Restoring brew shellenv to ~/.zprofile..."
+  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>~/.zprofile
+fi
+
+eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Install Homebrew packages
 log "Installing Homebrew packages..."
@@ -180,15 +206,6 @@ for package in "${packages[@]}"; do
     brew install "$package"
   fi
 done
-
-# Archive old NVIM cache if exists
-backup_dir="$HOME/.config/backups/$(date -u +%Y-%m-%d-%H%M%S)/nvim_local"
-mkdir -p "$backup_dir/{local,state,cache}"
-
-mv ~/.local/share/nvim "$backup_dir/local" 2>/dev/null || true
-mv ~/.local/state/nvim "$backup_dir/state" 2>/dev/null || true
-mv ~/.cache/nvim{,.bak} "$backup_dir/cache" 2>/dev/null || true
-
 
 # Run stow from dotfiles directory
 log "Configuring dotfiles with stow..."
