@@ -123,6 +123,16 @@ backup_configs() {
     needs_backup=true
   fi
 
+  # Backup Claude Code config
+  for claude_file in "$HOME/.claude/settings.json" "$HOME/CLAUDE.md"; do
+    if [ -e "$claude_file" ]; then
+      log "Backing up $claude_file"
+      mkdir -p "$backup_dir/.claude"
+      cp "$claude_file" "$backup_dir/.claude/"
+      needs_backup=true
+    fi
+  done
+
   # Backup NVIM local data, state, and cache
   for nvim_pair in "$HOME/.local/share/nvim:nvim_local_share" "$HOME/.local/state/nvim:nvim_local_state" "$HOME/.cache/nvim:nvim_cache"; do
     local src="${nvim_pair%%:*}"
@@ -150,6 +160,10 @@ backup_configs() {
     rmdir "$backup_dir" 2>/dev/null || true
   fi
 }
+
+# Configure git hooks path for this repo
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+git -C "$SCRIPT_DIR" config core.hooksPath .githooks
 
 # Run pre-flight checks
 preflight_check
@@ -188,6 +202,7 @@ packages=(
   "luarocks"
   "wget"
   "fd"
+  "jq"
   "stow"
   "uv"
   "pyenv"
@@ -218,6 +233,58 @@ if [ ! -d "$HOME/.config/tmux/plugins/tpm" ]; then
   git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
 else
   log "TMUX Plugin Manager already installed"
+fi
+
+# ── Claude Code setup ──────────────────────────────────────────────
+CLAUDE_FRAGMENT="$HOME/dotfiles/claude/settings-fragment.json"
+CLAUDE_REAL="$HOME/.claude/settings.json"
+
+# Link CLAUDE.md manually (stow ignores the claude dir via .stowrc and can't override per-file)
+if [ -f "$HOME/dotfiles/claude/CLAUDE.md" ]; then
+  log "Linking CLAUDE.md to home directory..."
+  ln -sf "$HOME/dotfiles/claude/CLAUDE.md" "$HOME/CLAUDE.md"
+fi
+
+# Merge Claude settings fragment into real settings
+if [ -f "$CLAUDE_FRAGMENT" ]; then
+  mkdir -p "$HOME/.claude"
+
+  if [ ! -f "$CLAUDE_REAL" ]; then
+    # No existing settings — just copy the fragment
+    log "No existing Claude settings found. Installing fragment as ~/.claude/settings.json"
+    cp "$CLAUDE_FRAGMENT" "$CLAUDE_REAL"
+  else
+    # Merge: fragment keys override real settings
+    MERGED=$(jq -s '.[0] * .[1]' "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" 2>/dev/null)
+
+    if [ $? -ne 0 ]; then
+      warn "Failed to merge Claude settings (invalid JSON?) — skipping"
+    else
+      CURRENT=$(jq -S '.' "$CLAUDE_REAL")
+      MERGED_SORTED=$(echo "$MERGED" | jq -S '.')
+
+      if [ "$CURRENT" = "$MERGED_SORTED" ]; then
+        log "Claude settings already up to date"
+      else
+        echo ""
+        echo -e "${YELLOW}Claude settings merge preview:${NC}"
+        echo ""
+        diff <(echo "$CURRENT") <(echo "$MERGED_SORTED") || true
+        echo ""
+        read -p "Apply these changes to ~/.claude/settings.json? (y/N): " -n 1 -r
+        echo
+
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+          jq -s '.[0] * .[1]' "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" > "${CLAUDE_REAL}.tmp" && mv "${CLAUDE_REAL}.tmp" "$CLAUDE_REAL"
+          log "Claude settings updated"
+        else
+          log "Skipped Claude settings merge"
+        fi
+      fi
+    fi
+  fi
+else
+  log "No claude/settings.json fragment found in repo — skipping Claude settings"
 fi
 
 log "Bootstrap complete!"

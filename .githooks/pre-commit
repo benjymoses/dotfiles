@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Pre-commit hook: ensure claude/settings.json fragment is in sync
+# with the real ~/.claude/settings.json
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+REPO_FRAGMENT="claude/settings-fragment.json"
+REAL_SETTINGS="$HOME/.claude/settings.json"
+
+# Skip check if repo fragment doesn't exist
+if [ ! -f "$REPO_FRAGMENT" ]; then
+  exit 0
+fi
+
+# Skip check if real settings doesn't exist
+if [ ! -f "$REAL_SETTINGS" ]; then
+  echo -e "${YELLOW}[WARN]${NC} ~/.claude/settings.json not found — skipping Claude settings sync check"
+  exit 0
+fi
+
+# Check jq is available
+if ! command -v jq >/dev/null 2>&1; then
+  echo -e "${YELLOW}[WARN]${NC} jq not installed — skipping Claude settings sync check"
+  exit 0
+fi
+
+# Extract only the keys present in the repo fragment from the real settings
+# This lets us compare apples to apples
+FRAGMENT_KEYS=$(jq -r 'keys[]' "$REPO_FRAGMENT" 2>/dev/null)
+if [ -z "$FRAGMENT_KEYS" ]; then
+  exit 0
+fi
+
+# Build a jq filter to extract only the fragment's keys from the real settings
+JQ_FILTER="{ $(echo "$FRAGMENT_KEYS" | sed 's/.*/"&": .["&"]/' | paste -sd, -) }"
+LOCAL_SUBSET=$(jq "$JQ_FILTER" "$REAL_SETTINGS" 2>/dev/null)
+REPO_CONTENT=$(jq -S '.' "$REPO_FRAGMENT" 2>/dev/null)
+LOCAL_SORTED=$(echo "$LOCAL_SUBSET" | jq -S '.' 2>/dev/null)
+
+# Compare
+if [ "$REPO_CONTENT" = "$LOCAL_SORTED" ]; then
+  exit 0
+fi
+
+# Divergence detected
+echo ""
+echo -e "${YELLOW}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${YELLOW}║  Claude settings fragment has diverged from local settings  ║${NC}"
+echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${GREEN}Repo fragment${NC} (claude/settings.json):"
+echo "$REPO_CONTENT" | head -20
+echo ""
+echo -e "${GREEN}Local settings${NC} (matching keys from ~/.claude/settings.json):"
+echo "$LOCAL_SORTED" | head -20
+echo ""
+echo "Choose an action:"
+echo "  1) MERGE LOCAL  — merge local settings into repo fragment, re-stage, then commit"
+echo "  2) KEEP REPO    — commit the staged fragment as-is"
+echo "  3) ABORT        — stop commit, fix manually"
+echo ""
+
+# Need a terminal for interactive input
+exec < /dev/tty
+
+read -p "Enter choice [1/2/3]: " -n 1 choice
+echo ""
+
+case "$choice" in
+  1)
+    echo -e "${GREEN}[INFO]${NC} Updating repo fragment from local settings..."
+    jq -s '.[0] * .[1]' "$REPO_FRAGMENT" <(echo "$LOCAL_SORTED") > "${REPO_FRAGMENT}.tmp" && mv "${REPO_FRAGMENT}.tmp" "$REPO_FRAGMENT"
+    git add "$REPO_FRAGMENT"
+    echo -e "${GREEN}[INFO]${NC} Fragment updated and staged. Proceeding with commit."
+    exit 0
+    ;;
+  2)
+    echo -e "${GREEN}[INFO]${NC} Keeping staged repo fragment. Proceeding with commit."
+    exit 0
+    ;;
+  3|*)
+    echo -e "${RED}[ABORT]${NC} Commit stopped. Fix claude/settings.json manually and try again."
+    exit 1
+    ;;
+esac
