@@ -4,6 +4,9 @@ export SUDO_EDITOR="$EDITOR"
 # Homebrew (loaded via .zprofile for login shells; not duplicated here)
 export HOMEBREW_NO_ENV_HINTS=1
 
+# Paths 
+export PATH="$HOME/.local/bin:$PATH"
+
 # Completions
 if [[ -d "/opt/homebrew/share/zsh/site-functions" ]]; then
   fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
