@@ -42,6 +42,8 @@ config.keys = {
 	},
 }
 
+config.enable_kitty_keyboard = true
+
 config.color_scheme = "Catppuccin Mocha"
 
 config.native_macos_fullscreen_mode = true
