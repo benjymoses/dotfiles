@@ -180,8 +180,6 @@ symbol = '󰸏'
 [aws.region_aliases]
 eu-west-1 = 'euw1'
 us-east-1 = 'use1'
-#[aws.profile_aliases]
-#benmoses-Admin = 'default (Admin)'
 
 [nodejs]
 symbol = ""
