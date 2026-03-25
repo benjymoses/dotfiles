@@ -124,7 +124,7 @@ backup_configs() {
   fi
 
   # Backup Claude Code config
-  for claude_file in "$HOME/.claude/settings.json" "$HOME/CLAUDE.md"; do
+  for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md"; do
     if [ -e "$claude_file" ]; then
       log "Backing up $claude_file"
       mkdir -p "$backup_dir/.claude"
@@ -240,10 +240,13 @@ CLAUDE_FRAGMENT="$HOME/dotfiles/claude/settings-fragment.json"
 CLAUDE_REAL="$HOME/.claude/settings.json"
 
 # Link CLAUDE.md manually (stow ignores the claude dir via .stowrc and can't override per-file)
-if [ -f "$HOME/dotfiles/claude/CLAUDE.md" ]; then
-  log "Linking CLAUDE.md to home directory..."
-  ln -sf "$HOME/dotfiles/claude/CLAUDE.md" "$HOME/CLAUDE.md"
+mkdir -p "$HOME/.claude"
+if [ -e "$HOME/.claude/CLAUDE.md" ]; then
+  log "Removing existing CLAUDE.md before linking (original backed up to ~/.config/backups/)"
+  rm -f "$HOME/.claude/CLAUDE.md"
 fi
+log "Linking CLAUDE.md to ~/.claude/..."
+ln -sf "$HOME/dotfiles/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 
 # Merge Claude settings fragment into real settings
 if [ -f "$CLAUDE_FRAGMENT" ]; then
