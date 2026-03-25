@@ -8,6 +8,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+echo -e "${GREEN}[hook]${NC} Checking Claude settings sync..."
+
 REPO_FRAGMENT="claude/settings-fragment.json"
 REAL_SETTINGS="$HOME/.claude/settings.json"
 
