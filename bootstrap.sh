@@ -248,6 +248,13 @@ fi
 log "Linking CLAUDE.md to ~/.claude/..."
 ln -sf "$HOME/dotfiles/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
 
+# Link DesktopNotification.app (used by Claude Code notification hook)
+if [ -e "$HOME/.claude/DesktopNotification.app" ]; then
+  rm -rf "$HOME/.claude/DesktopNotification.app"
+fi
+log "Linking DesktopNotification.app to ~/.claude/..."
+ln -sf "$HOME/dotfiles/claude/DesktopNotification.app" "$HOME/.claude/DesktopNotification.app"
+
 # Merge Claude settings fragment into real settings
 if [ -f "$CLAUDE_FRAGMENT" ]; then
   mkdir -p "$HOME/.claude"
