@@ -124,7 +124,7 @@ backup_configs() {
   fi
 
   # Backup Claude Code config
-  for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md"; do
+  for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/statusline-command.sh"; do
     if [ -e "$claude_file" ]; then
       log "Backing up $claude_file"
       mkdir -p "$backup_dir/.claude"
@@ -254,6 +254,14 @@ if [ -e "$HOME/.claude/DesktopNotification.app" ]; then
 fi
 log "Linking DesktopNotification.app to ~/.claude/..."
 ln -sf "$HOME/dotfiles/claude/DesktopNotification.app" "$HOME/.claude/DesktopNotification.app"
+
+# Link statusline-command.sh (used by Claude Code status line)
+if [ -e "$HOME/.claude/statusline-command.sh" ]; then
+  log "Removing existing statusline-command.sh before linking (original backed up to ~/.config/backups/)"
+  rm -f "$HOME/.claude/statusline-command.sh"
+fi
+log "Linking statusline-command.sh to ~/.claude/..."
+ln -sf "$HOME/dotfiles/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
 
 # Merge Claude settings fragment into real settings
 if [ -f "$CLAUDE_FRAGMENT" ]; then
