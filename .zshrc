@@ -39,38 +39,49 @@ function mkkiro() {
   mkdir -p $HOME/Documents/code/$1; kiro $HOME/Documents/code/$1;
 }
 
-# Pyenv (lazy - only init on first use)
+# Pyenv
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-if (( $+commands[pyenv] )); then
-  _lazy_pyenv_init() {
-    unfunction python python3 pyenv 2>/dev/null
-    eval "$(pyenv init -)"
-  }
-  function python3() { _lazy_pyenv_init; python3 "$@" }
-  function python() { _lazy_pyenv_init; python "$@" }
-  function pyenv() { _lazy_pyenv_init; pyenv "$@" }
-fi
+(( $+commands[pyenv] )) && eval "$(pyenv init -)"
 
-## NVM (lazy - only init on first use)
+# NVM
 export NVM_DIR="$HOME/.nvm"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-  local _nvm_default="$NVM_DIR/alias/default"
-  if [ -r "$_nvm_default" ]; then
-    local _nvm_ver="v$(cat "$_nvm_default")"
-    local _nvm_bin="$NVM_DIR/versions/node/$_nvm_ver/bin"
-    [[ -d "$_nvm_bin" && ":PATH:" != *":$_nvm_bin:"* ]] && PATH="$_nvm_bin:$PATH"
-  fi
-  _lazy_nvm_init() {
-    unfunction nvm node npm npx 2>/dev/null
-    \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-  }
-  function nvm() { _lazy_nvm_init; nvm "$@" }
-  function node() { _lazy_nvm_init; node "$@" }
-  function npm() { _lazy_nvm_init; npm "$@" }
-  function npx() { _lazy_nvm_init; npx "$@" }
-fi
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# # Pyenv (lazy - only init on first use)
+# export PYENV_ROOT="$HOME/.pyenv"
+# [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+# if (( $+commands[pyenv] )); then
+#   _lazy_pyenv_init() {
+#     unfunction python python3 pyenv 2>/dev/null
+#     eval "$(pyenv init -)"
+#   }
+#   function python3() { _lazy_pyenv_init; python3 "$@" }
+#   function python() { _lazy_pyenv_init; python "$@" }
+#   function pyenv() { _lazy_pyenv_init; pyenv "$@" }
+# fi
+
+# ## NVM (lazy - only init on first use)
+# export NVM_DIR="$HOME/.nvm"
+# if [ -s "$NVM_DIR/nvm.sh" ]; then
+#   local _nvm_default="$NVM_DIR/alias/default"
+#   if [ -r "$_nvm_default" ]; then
+#     local _nvm_ver="v$(cat "$_nvm_default")"
+#     local _nvm_bin="$NVM_DIR/versions/node/$_nvm_ver/bin"
+#     [[ -d "$_nvm_bin" && ":PATH:" != *":$_nvm_bin:"* ]] && PATH="$_nvm_bin:$PATH"
+#   fi
+#   _lazy_nvm_init() {
+#     unfunction nvm node npm npx 2>/dev/null
+#     \. "$NVM_DIR/nvm.sh"
+#     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+#   }
+#   function nvm() { _lazy_nvm_init; nvm "$@" }
+#   function node() { _lazy_nvm_init; node "$@" }
+#   function npm() { _lazy_nvm_init; npm "$@" }
+#   function npx() { _lazy_nvm_init; npx "$@" }
+# fi
+
 
 # pnpm
 export PNPM_HOME="$HOME/Library/pnpm"
@@ -104,6 +115,9 @@ eval "$(zoxide init zsh --cmd cd)"
 
 # eza
 alias ls="eza --icons --color=always --group-directories-first"
+
+# Claude Code with Diagram import
+alias cdi='claude --append-system-prompt "$(cat .claude/diagrams/*.md(N) < /dev/null 2>/dev/null)"'
 
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
 
