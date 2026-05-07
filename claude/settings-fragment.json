@@ -6,7 +6,7 @@
 		"MAX_THINKING_TOKENS": "4096",
 		"_ZO_DOCTOR": "0"
 	},
-	"effortLevel": "high",
+	"effortLevel": "medium",
 	"attribution": {
 		"commit": "",
 		"pr": ""
@@ -218,17 +218,18 @@
 		"allowUnsandboxedCommands": false,
 		"network": {
 			"allowLocalBinding": true,
-			"allowMachLookup": [
-				"com.apple.trustd",
-				"com.apple.trustd.agent"
-			],
+			"allowMachLookup": ["com.apple.trustd", "com.apple.trustd.agent"],
 			"allowAllUnixSockets": true
 		},
 		"filesystem": {
 			"allowRead": [
 				"~/.ssh/id_rsa",
-				"~/.ssh/id_ecdsa"
-			]
+				"~/.ssh/id_rsa.pub",
+				"~/.ssh/id_ecdsa",
+				"~/.ssh/known_hosts",
+				"~/.ssh/config"
+			],
+			"allowWrite": ["/var/folders/*/*/T/**", "~/.ssh/known_hosts"]
 		}
 	},
 	"tui": "fullscreen",
