@@ -30,7 +30,7 @@ mkdir -p "$HOME/.claude"
 # Backup existing Claude files before replacing them
 BACKUP_DIR="$HOME/.config/backups/$(date -u +%Y-%m-%d-%H%M%S)"
 CLAUDE_BACKUP_NEEDED=false
-for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/statusline-command.sh" "$HOME/.claude/hooks/biome.sh" "$HOME/.claude/hooks/ts-typecheck.sh"; do
+for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/RTK.md" "$HOME/.claude/superpowers-tiering.md" "$HOME/.claude/statusline-command.sh" "$HOME/.claude/hooks/biome.sh" "$HOME/.claude/hooks/ts-typecheck.sh"; do
   if [ -e "$claude_file" ] && [ ! -L "$claude_file" ]; then
     if [ "$CLAUDE_BACKUP_NEEDED" = false ]; then
       mkdir -p "$BACKUP_DIR/.claude"
@@ -44,13 +44,16 @@ if [ "$CLAUDE_BACKUP_NEEDED" = true ]; then
   log "Claude files backed up to: $BACKUP_DIR/.claude/"
 fi
 
-# Link CLAUDE.md manually (stow ignores the claude dir via .stowrc and can't override per-file)
-if [ -e "$HOME/.claude/CLAUDE.md" ]; then
-  log "Removing existing CLAUDE.md before linking (original backed up to ~/.config/backups/)"
-  rm -f "$HOME/.claude/CLAUDE.md"
-fi
-log "Linking CLAUDE.md to ~/.claude/..."
-ln -sf "$CLAUDE_DIR/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+# Link top-level markdown files manually (stow ignores the claude dir via .stowrc and can't override per-file)
+# CLAUDE.md is the global instructions file. RTK.md and superpowers-tiering.md are referenced from it via @-refs.
+for md_file in CLAUDE.md RTK.md superpowers-tiering.md; do
+  if [ -e "$HOME/.claude/$md_file" ]; then
+    log "Removing existing $md_file before linking (original backed up to ~/.config/backups/)"
+    rm -f "$HOME/.claude/$md_file"
+  fi
+  log "Linking $md_file to ~/.claude/..."
+  ln -sf "$CLAUDE_DIR/$md_file" "$HOME/.claude/$md_file"
+done
 
 # Link DesktopNotification.app (used by Claude Code notification hook)
 if [ -e "$HOME/.claude/DesktopNotification.app" ]; then

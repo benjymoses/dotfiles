@@ -3,24 +3,36 @@
 	"env": {
 		"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
 		"CLAUDE_CODE_ENABLE_TELEMETRY": "0",
+		"MAX_THINKING_TOKENS": "4096",
 		"_ZO_DOCTOR": "0"
 	},
+	"effortLevel": "high",
 	"attribution": {
 		"commit": "",
 		"pr": ""
 	},
 	"permissions": {
 		"allow": [
-			"Bash(biome *)",
+			"Bash(awk:*)",
+			"Bash(basename:*)",
+			"Bash(biome:*)",
 			"Bash(cat:*)",
 			"Bash(cd:*)",
-			"Bash(curl:-s \"https://registry.npmjs.org/*)",
+			"Bash(corepack:*)",
+			"Bash(cp:*)",
+			"Bash(cut:*)",
 			"Bash(date:*)",
+			"Bash(diff:*)",
+			"Bash(dirname:*)",
 			"Bash(echo:*)",
-			"Bash(gh issue create *)",
-			"Bash(gh issue list *)",
-			"Bash(gh repo view *)",
-			"Bash(git -C */** diff:*)",
+			"Bash(false)",
+			"Bash(find:*)",
+			"Bash(gh issue create:*)",
+			"Bash(gh issue list:*)",
+			"Bash(gh pr create:*)",
+			"Bash(gh pr list:*)",
+			"Bash(gh pr view:*)",
+			"Bash(gh repo view:*)",
 			"Bash(git add:*)",
 			"Bash(git branch:*)",
 			"Bash(git checkout:*)",
@@ -33,26 +45,42 @@
 			"Bash(git status:*)",
 			"Bash(git tag:*)",
 			"Bash(git worktree:*)",
+			"Bash(glab api *)",
+			"Bash(glab ci *)",
+			"Bash(glab issue *)",
+			"Bash(glab mr *)",
 			"Bash(grep:*)",
 			"Bash(head:*)",
+			"Bash(jest:*)",
+			"Bash(jq:*)",
 			"Bash(ls:*)",
+			"Bash(md5 *)",
 			"Bash(mkdir:*)",
+			"Bash(mv:*)",
 			"Bash(node:*)",
 			"Bash(nvm use:*)",
-			"Bash(pnpm add *)",
-			"Bash(pnpm build:*)",
-			"Bash(pnpm format)",
-			"Bash(pnpm init)",
-			"Bash(pnpm install:*)",
-			"Bash(pnpm lint:*)",
-			"Bash(pnpm run:*)",
-			"Bash(pnpm test:*)",
-			"Bash(pnpm typecheck)",
+			"Bash(playwright:*)",
+			"Bash(pnpm:*)",
+			"Bash(pnpx:*)",
+			"Bash(printf:*)",
+			"Bash(pwd)",
+			"Bash(rm:*)",
+			"Bash(rg:*)",
+			"Bash(sed:*)",
 			"Bash(sort:*)",
 			"Bash(tail:*)",
+			"Bash(test:*)",
 			"Bash(tr:*)",
-			"Bash(tsc *)",
+			"Bash(true)",
+			"Bash(tsc:*)",
+			"Bash(turbo:*)",
+			"Bash(uv:*)",
+			"Bash(uvx:*)",
+			"Bash(vitest:*)",
 			"Bash(wc:*)",
+			"Bash(which:*)",
+			"Bash(xargs:*)",
+			"Bash(yes:*)",
 			"Edit",
 			"Glob",
 			"Grep",
@@ -82,21 +110,44 @@
 			"Write"
 		],
 		"deny": [
-			"Bash(rm -rf:*)",
+			"Bash(rm -rf /:*)",
+			"Bash(rm -rf /*)",
+			"Bash(rm -rf ~:*)",
+			"Bash(rm -rf ~/:*)",
+			"Bash(rm -rf $HOME:*)",
+			"Bash(rm -rf /System:*)",
+			"Bash(rm -rf /Library:*)",
+			"Bash(rm -rf /Users:*)",
 			"Bash(sudo:*)",
 			"Bash(git push --force:*)",
 			"Read(.env)",
 			"Read(.env.*)",
-			"Read(~/.ssh/**)",
-			"Read(~/.aws/**)",
+			"Read(~/.ssh/authorized_keys)",
+			"Read(~/.aws/credentials)",
+			"Read(~/.aws/sso/**)",
 			"Read(~/Library/Keychains/**)"
 		],
-		"ask": ["Bash(git push:*)", "Bash(docker:*)", "Bash(curl:*)"],
+		"ask": [
+			"Bash(git push:*)",
+			"Bash(git push --force-with-lease:*)",
+			"Bash(docker:*)",
+			"Bash(curl:*)",
+			"Bash(pnpm publish:*)"
+		],
 		"additionalDirectories": [
 			"~/Library/pnpm/store",
 			"/Users/benmoses/.claude/plugins/cache/claude-plugins-official/superpowers",
 			"/Users/benmoses/Library/pnpm/store",
-			"/Users/benmoses/.config/superpowers/worktrees"
+			"/Users/benmoses/.local/state/pnpm",
+			"/Users/benmoses/Library/Caches/pnpm",
+			"/Users/benmoses/.npm",
+			"/Users/benmoses/.cache/node",
+			"/Users/benmoses/Library/Caches/typescript",
+			"/Users/benmoses/Library/Caches/dev.biomejs.biome",
+			"/Users/benmoses/Library/Caches/ms-playwright",
+			"/Users/benmoses/Library/Caches/node-gyp",
+			"/tmp",
+			"/private/tmp"
 		]
 	},
 	"hooks": {
@@ -107,6 +158,26 @@
 					{
 						"type": "command",
 						"command": "/Users/benmoses/.claude/DesktopNotification.app/Contents/MacOS/applet"
+					}
+				]
+			}
+		],
+		"PreToolUse": [
+			{
+				"matcher": "Agent",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "/Users/benmoses/.claude/hooks/agent-teams-nudge.sh"
+					}
+				]
+			},
+			{
+				"matcher": "Bash",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "rtk hook claude"
 					}
 				]
 			}
@@ -146,10 +217,22 @@
 		"enabled": true,
 		"allowUnsandboxedCommands": false,
 		"network": {
-			"allowLocalBinding": true
+			"allowLocalBinding": true,
+			"allowMachLookup": [
+				"com.apple.trustd",
+				"com.apple.trustd.agent"
+			],
+			"allowAllUnixSockets": true
+		},
+		"filesystem": {
+			"allowRead": [
+				"~/.ssh/id_rsa",
+				"~/.ssh/id_ecdsa"
+			]
 		}
 	},
 	"tui": "fullscreen",
+	"autoUpdatesChannel": "stable",
 	"theme": "dark-ansi",
 	"teammateMode": "tmux",
 	"autoDreamEnabled": true

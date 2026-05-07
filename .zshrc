@@ -57,6 +57,8 @@ case ":$PATH:" in
 esac
 # pnpm end
 
+export PATH="/Users/benmoses/Library/pnpm/bin:$PATH"
+
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
@@ -84,6 +86,7 @@ alias cdi='claude --append-system-prompt "$(cat .claude/diagrams/*.md(N) < /dev/
 
 alias claude-pro="claude --settings '{\"env\":{\"CLAUDE_CODE_USE_BEDROCK\":\"0\",\"ANTHROPIC_DEFAULT_SONNET_MODEL\":\"\",\"ANTHROPIC_DEFAULT_OPUS_MODEL\":\"\",\"ANTHROPIC_DEFAULT_HAIKU_MODEL\":\"\",\"ANTHROPIC_DEFAULT_OPUS_MODEL_NAME\":\"Opus 4.6 (Claude Pro)\",\"ANTHROPIC_DEFAULT_SONNET_MODEL_NAME\":\"Sonnet 4.6 (Claude Pro)\",\"ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME\":\"Haiku 4.5 (Claude Pro)\"}}'"
 
+alias claude-system="claude --permission-mode bypassPermissions"
 
 [[ "$TERM_PROGRAM" == "kiro" ]] && . "$(kiro --locate-shell-integration-path zsh)"
 
