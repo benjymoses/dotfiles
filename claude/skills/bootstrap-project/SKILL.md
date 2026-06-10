@@ -1,6 +1,6 @@
 ---
 name: bootstrap-project
-description: Bootstrap or audit a project's harness conventions and stack tooling. Lays down .claude/CONTEXT.md, OpenSpec (ben-flow), diagrams dir, and per-project plugins, then applies stack-specific tooling from references (TypeScript — tsc strict, Biome, pnpm scripts). Use for "bootstrap this", "set up / initialise / audit this project", "add Biome", "make sure TypeScript and linting are configured", or retrofitting conventions onto an existing repo.
+description: Bootstrap or audit a project's harness conventions, service wiring, and stack tooling. Lays down .claude/CONTEXT.md, OpenSpec (ben-flow), diagrams dir; wires selected/detected services (Vercel, Supabase, AWS…) via per-project plugins, .mcp.json, vendored skills; applies stack tooling from references (TypeScript — tsc strict, Biome, pnpm scripts). Use for "bootstrap this", "set up / initialise / audit this project", "add Biome", "make sure TypeScript and linting are configured", or retrofitting conventions onto an existing repo.
 ---
 
 # Bootstrap Project
@@ -24,7 +24,7 @@ Build a gap report before acting:
 | `.claude/CONTEXT.md` | Exists and indexes any `references/` files |
 | `.claude/diagrams/` | Exists (only expected where architecture warrants it) |
 | OpenSpec | `openspec/` exists; `openspec/config.yaml` has `schema: ben-flow` |
-| Per-project plugins | Stack services (Vercel, Supabase, Swift…) detected in deps/config but plugin not enabled in project `.claude/settings.json` — these are deliberately disabled globally |
+| Services | Detected in deps/config (Vercel, Supabase, AWS…) but missing their per-project wiring per `references/services.md` |
 | `.worktreeinclude` | Present when the project needs untracked files (`.env`-style) inside worktrees |
 | Stack tooling | Per the matching reference file below |
 
@@ -45,9 +45,26 @@ intentional and flag rather than change it.
   architecture worth diagramming — Mermaid format.
 - **OpenSpec**: `openspec init` if missing; ensure `schema: ben-flow` in
   `openspec/config.yaml`.
-- **Per-project plugins**: enable detected stack plugins in the project's
-  `.claude/settings.json` `enabledPlugins` (merge, don't overwrite).
 - **`.worktreeinclude`**: offer when untracked env files exist.
+
+## 2b. Services
+
+Read `references/services.md` for the service → wiring matrix, then:
+
+- **Existing repos**: detection is primary — wire up what the deps/config
+  show. Ask only about ambiguous or planned-but-not-yet-added services.
+- **Greenfield**: ask once with `AskUserQuestion` (multiSelect) which
+  services the project will use, options drawn from the matrix.
+
+For each selected/detected service apply its row from the matrix. The
+mechanism differs by artifact type — never mix them up:
+
+| Artifact | Mechanism |
+|---|---|
+| Plugins | Enable by reference in project `.claude/settings.json` `enabledPlugins` (merge). Never vendor plugin content into the repo |
+| MCP servers | Committed `.mcp.json` at project root (merge with existing) |
+| Skills | Vendor as raw files committed in `.claude/skills/<name>/` — never symlinks (break for collaborators/CI). Note source + version in the vendored SKILL.md frontmatter so a later re-run can diff against upstream and offer a refresh |
+| Sandbox/permissions | Add the service's domains/paths to project `.claude/settings.json` (merge) to pre-empt first-run friction prompts |
 
 ## 3. Stack tooling
 
