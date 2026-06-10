@@ -62,6 +62,8 @@ export PATH="/Users/benmoses/Library/pnpm/bin:$PATH"
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
+export PATH="$PATH:/sbin"
+
 # History setup
 HISTFILE=$HOME/.zhistory
 SAVEHIST=1000

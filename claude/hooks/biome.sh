@@ -2,13 +2,13 @@
 # PostToolUse hook: format + check (lint + import organisation) edited files with biome
 # Receives tool JSON on stdin, extracts file_path, runs biome from the project root
 
-FILE=$(jq -r '.tool_input.file_path' < /dev/stdin)
+FILE=$(jq -r '.tool_input.file_path' </dev/stdin)
 [ -z "$FILE" ] || [ "$FILE" = "null" ] && exit 0
 
 # Only run for file types Biome supports (avoids spurious failures on .md, .py, .sh, etc.)
 case "$FILE" in
-  *.ts|*.tsx|*.js|*.jsx|*.cjs|*.mjs|*.cts|*.mts|*.json|*.jsonc|*.css) ;;
-  *) exit 0 ;;
+*.ts | *.tsx | *.js | *.jsx | *.cjs | *.mjs | *.cts | *.mts | *.json | *.jsonc | *.css) ;;
+*) exit 0 ;;
 esac
 
 # Walk up from the file to find biome.json (works in worktrees)
@@ -37,15 +37,31 @@ if [ -n "$PATTERNS" ]; then
 '
   for pattern in $PATTERNS; do
     # shellcheck disable=SC2254
-    case "$REL" in $pattern) MATCHED=1; break;; esac
+    case "$REL" in $pattern)
+      MATCHED=1
+      break
+      ;;
+    esac
   done
   IFS=$OLD_IFS
   set +f
   [ "$MATCHED" = 0 ] && exit 0
 fi
 
-# Format silently — formatting failures shouldn't block
-biome format --write --config-path "$DIR" "$FILE" 2>/dev/null
+# Prefer the project-local biome so hook results match the project's pinned version
+BIOME="$DIR/node_modules/.bin/biome"
+[ -x "$BIOME" ] || BIOME="biome"
+command -v "$BIOME" >/dev/null 2>&1 || exit 0
 
-# Check (lint + organise imports) with auto-fix — pass through exit code so agents see unfixable errors
-exec biome check --write --unsafe --config-path "$DIR" "$FILE"
+# Format silently — formatting failures shouldn't block
+"$BIOME" format --write --config-path "$DIR" "$FILE" 2>/dev/null
+
+# Check (lint + organise imports) with auto-fix.
+# PostToolUse hooks only feed errors back to Claude on exit 2 + stderr —
+# any other non-zero exit is silently logged, so map failures explicitly.
+if ! OUTPUT=$("$BIOME" check --write --config-path "$DIR" "$FILE" 2>&1); then
+  printf '%s\n' "$OUTPUT" >&2
+  exit 2
+fi
+
+exit 0

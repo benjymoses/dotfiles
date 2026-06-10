@@ -1,0 +1,176 @@
+name: ben-flow
+version: 1
+description: Ben's spec-driven workflow - lean proposals, TDD-structured tasks, team-dispatched apply
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Lean proposal outlining why the change is needed
+    template: proposal.md
+    instruction: |
+      Create the proposal that establishes WHY this change is needed.
+
+      HARD LIMIT: one page. If you need more, the change should be split.
+      No filler — every sentence must inform a decision.
+
+      Sections:
+      - **Why**: 1-2 sentences. The problem or opportunity. If this comes from
+        a GitHub issue, reference it (e.g. "Fixes #123") and distil the issue
+        rather than restating it.
+      - **What Changes**: Bullet list. Be specific about new capabilities,
+        modifications, or removals. Mark breaking changes with **BREAKING**.
+      - **Capabilities**: The contract between proposal and specs phases.
+        Research existing specs in `openspec/specs/` before filling this in.
+        - **New Capabilities**: each becomes `specs/<name>/spec.md` (kebab-case).
+        - **Modified Capabilities**: only when spec-level REQUIREMENTS change
+          (not implementation details). Use existing spec folder names.
+      - **Impact**: Affected code, APIs, dependencies, systems. One line each.
+
+      Focus on the "why", not the "how" — implementation belongs in design.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Testable specifications for the change
+    template: spec.md
+    instruction: |
+      Create specification files that define WHAT the system should do.
+
+      Create one spec file per capability listed in the proposal's Capabilities section.
+      - New capabilities: use the exact kebab-case name from the proposal (specs/<capability>/spec.md).
+      - Modified capabilities: use the existing spec folder name from openspec/specs/<capability>/ when creating the delta spec at specs/<capability>/spec.md.
+
+      Delta operations (use ## headers):
+      - **ADDED Requirements**: New capabilities
+      - **MODIFIED Requirements**: Changed behavior - MUST include full updated content
+      - **REMOVED Requirements**: Deprecated features - MUST include **Reason** and **Migration**
+      - **RENAMED Requirements**: Name changes only - use FROM:/TO: format
+
+      Format requirements:
+      - Each requirement: `### Requirement: <name>` followed by description
+      - Use SHALL/MUST for normative requirements (avoid should/may)
+      - Each scenario: `#### Scenario: <name>` with WHEN/THEN format
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`). Using 3 hashtags or bullets will fail silently.
+      - Every requirement MUST have at least one scenario.
+      - Every scenario MUST be written so it can become a test case verbatim —
+        if you cannot name the test, the scenario is too vague.
+
+      Invariants (selective — do not force):
+      Where a requirement expresses a TRUE invariant — a law that holds for all
+      inputs, not just examples — add an `**Invariant:**` line under the
+      requirement stating it as a universally quantified property. Genuine
+      invariants include round-trips (decode(encode(x)) === x), idempotence
+      (f(f(x)) === f(x)), bounds/totality (output always within range, never
+      throws on valid input), order-insensitivity, and conservation (sum
+      preserved across a transformation). Most CRUD-ish or workflow behaviour
+      has no natural invariant — in that case write none. A contrived property
+      is worse than no property.
+
+      MODIFIED requirements workflow:
+      1. Locate the existing requirement in openspec/specs/<capability>/spec.md
+      2. Copy the ENTIRE requirement block (from `### Requirement:` through all scenarios)
+      3. Paste under `## MODIFIED Requirements` and edit to reflect new behavior
+      4. Ensure header text matches exactly (whitespace-insensitive)
+
+      Common pitfall: Using MODIFIED with partial content loses detail at archive time.
+      If adding new concerns without changing existing behavior, use ADDED instead.
+    requires:
+      - proposal
+
+  - id: design
+    generates: design.md
+    description: Technical design - only when the complexity warrants it
+    template: design.md
+    instruction: |
+      Create the design document that explains HOW to implement the change.
+
+      Create design.md ONLY if at least one of these applies:
+      - Cross-cutting change (multiple services/modules) or new architectural pattern
+      - New external dependency or significant data model changes
+      - Security, performance, or migration complexity
+      - Ambiguity that benefits from technical decisions before coding
+      If none apply, SKIP this artifact entirely — do not produce a ceremonial
+      design doc for a straightforward change.
+
+      Sections (omit any that don't earn their place):
+      - **Context**: Background, current state, constraints
+      - **Goals / Non-Goals**: What this design achieves and explicitly excludes
+      - **Decisions**: Key technical choices with rationale (why X over Y?).
+        Include alternatives considered. This section is the document's reason
+        to exist — decisions recorded here are the project's decision log.
+      - **Risks / Trade-offs**: Format: [Risk] → Mitigation
+      - **Migration Plan**: Deploy steps and rollback strategy (if applicable)
+      - **Open Questions**: Outstanding unknowns; resolve before apply or flag to the user
+
+      Architecture diagrams belong in `.claude/diagrams/` (Mermaid) — reference
+      them from here and update them when the design changes structure.
+
+      Focus on architecture and approach, not line-by-line implementation.
+    requires:
+      - proposal
+
+  - id: tasks
+    generates: tasks.md
+    description: TDD implementation checklist with verification commands
+    template: tasks.md
+    instruction: |
+      Create the task list that breaks down the implementation work.
+
+      **IMPORTANT: Follow the template exactly.** The apply phase parses
+      checkbox format to track progress. Tasks not using `- [ ]` won't be tracked.
+
+      Structure:
+      - Group tasks under ## numbered headings, ordered by dependency
+      - Each group implements one capability or coherent slice
+      - Within a group, follow TDD: test task first (RED), implementation
+        task second (GREEN), refactor task only when needed (REFACTOR)
+      - Each task MUST be a checkbox: `- [ ] X.Y Task description`
+      - Test tasks name the spec scenario(s) they cover
+      - Where the spec marks an `**Invariant:**` on a requirement in this
+        group, the RED task MUST include a property-based test for it using
+        fast-check (https://github.com/dubzzz/fast-check) alongside the
+        example-based scenario tests. Name the invariant in the task. Add
+        fast-check as a dev dependency if the project lacks it. Requirements
+        without a marked invariant get example tests only — never invent
+        properties the spec didn't claim.
+      - Each group ends with a **Verify:** line giving the exact command(s)
+        to prove the group is done (single test file, not the whole suite)
+      - Tasks should be small enough to complete in one session
+
+      Example:
+      ```
+      ## 1. Data export capability
+
+      - [ ] 1.1 RED: failing tests for "Successful export" + "Empty data" scenarios (src/export/csv.test.ts)
+      - [ ] 1.2 RED: fast-check property for invariant "parse(serialise(rows)) === rows" (src/export/csv.property.test.ts)
+      - [ ] 1.3 GREEN: implement exportCsv to pass 1.1 + 1.2
+      - [ ] 1.4 REFACTOR: extract shared formatting helpers (only if duplication emerged)
+
+      **Verify:** `pnpm vitest run src/export/csv.test.ts src/export/csv.property.test.ts`
+      ```
+
+      Annotate parallelism: if two groups touch disjoint files, note
+      "(parallel-safe with group N)" on the heading so apply can dispatch
+      them concurrently.
+    requires:
+      - specs
+      - design
+
+apply:
+  requires: [tasks]
+  tracks: tasks.md
+  instruction: |
+    Read proposal, specs, design (if present), and tasks before starting.
+
+    Dispatch: for multi-group task lists, use TeamCreate (implementer +
+    spec-conformance reviewer + code-quality reviewer) rather than implementing
+    inline. Groups marked parallel-safe may run concurrently; otherwise stay
+    sequential. Every implementer prompt must be self-contained (task text,
+    spec scenarios it satisfies, verification command) and instruct TDD:
+    write the failing test first, then make it pass.
+
+    Follow TDD strictly — RED before GREEN within every group. Run each
+    group's **Verify** command before checking off its final task; mark tasks
+    complete as you go, not in a batch.
+
+    Pause and ask the user if you hit blockers, ambiguity, or a spec that
+    turns out to be wrong — do not silently improvise around the spec.

@@ -27,9 +27,9 @@ case "$subagent_type" in
   *:*) exit 0 ;;
 esac
 
-# Heuristic: prompt indicates coordinated implementation work.
-# Match common phrases used by superpowers implementer/reviewer prompts.
-if printf '%s' "$prompt" | grep -qiE 'implementer|spec[- ]review|code[- ]quality[- ]review|TDD|RED/GREEN|task [0-9]+ of|execute the plan|implementation plan|follow TDD'; then
+# Heuristic: prompt indicates coordinated implementation work
+# (implementer/reviewer roles, plan execution, multi-task TDD runs).
+if printf '%s' "$prompt" | grep -qiE 'implementer|spec[- ]review|code[- ]quality[- ]review|TDD|RED/GREEN|task [0-9]+ of|execute the plan|implementation plan|apply the change'; then
   cat <<'EOF' >&2
 ⚠️  Agent() call looks like coordinated implementation work.
 Prefer TeamCreate so multiple subagents share team context and you can run them in parallel.

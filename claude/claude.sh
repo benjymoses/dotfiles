@@ -30,7 +30,7 @@ mkdir -p "$HOME/.claude"
 # Backup existing Claude files before replacing them
 BACKUP_DIR="$HOME/.config/backups/$(date -u +%Y-%m-%d-%H%M%S)"
 CLAUDE_BACKUP_NEEDED=false
-for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/superpowers-tiering.md" "$HOME/.claude/statusline-command.sh" "$HOME/.claude/hooks/biome.sh" "$HOME/.claude/hooks/ts-typecheck.sh"; do
+for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/statusline-command.sh" "$HOME/.claude/hooks/biome.sh" "$HOME/.claude/hooks/stop-typecheck.sh"; do
   if [ -e "$claude_file" ] && [ ! -L "$claude_file" ]; then
     if [ "$CLAUDE_BACKUP_NEEDED" = false ]; then
       mkdir -p "$BACKUP_DIR/.claude"
@@ -45,8 +45,8 @@ if [ "$CLAUDE_BACKUP_NEEDED" = true ]; then
 fi
 
 # Link top-level markdown files manually (stow ignores the claude dir via .stowrc and can't override per-file)
-# CLAUDE.md is the global instructions file. superpowers-tiering.md is referenced from it via @-refs.
-for md_file in CLAUDE.md superpowers-tiering.md; do
+# CLAUDE.md is the global instructions file.
+for md_file in CLAUDE.md; do
   if [ -e "$HOME/.claude/$md_file" ]; then
     log "Removing existing $md_file before linking (original backed up to ~/.config/backups/)"
     rm -f "$HOME/.claude/$md_file"
@@ -80,6 +80,46 @@ for hook_file in "$CLAUDE_DIR/hooks/"*.sh; do
   fi
   log "Linking $local_name to ~/.claude/hooks/..."
   ln -sf "$hook_file" "$HOME/.claude/hooks/$local_name"
+done
+
+# Link dotfiles-managed skills into ~/.claude/skills/
+mkdir -p "$HOME/.claude/skills"
+for skill_dir in "$CLAUDE_DIR/skills/"*/; do
+  [ -d "$skill_dir" ] || continue
+  skill_name=$(basename "$skill_dir")
+  if [ -e "$HOME/.claude/skills/$skill_name" ] && [ ! -L "$HOME/.claude/skills/$skill_name" ]; then
+    warn "~/.claude/skills/$skill_name exists and is not a symlink — skipping"
+    continue
+  fi
+  log "Linking skill '$skill_name'..."
+  ln -sfn "${skill_dir%/}" "$HOME/.claude/skills/$skill_name"
+done
+
+# Link OpenSpec user-level schemas (resolution: project → user → package).
+# OpenSpec's user dir is ${XDG_DATA_HOME:-~/.local/share}/openspec/schemas.
+OPENSPEC_USER_SCHEMAS="${XDG_DATA_HOME:-$HOME/.local/share}/openspec/schemas"
+mkdir -p "$OPENSPEC_USER_SCHEMAS"
+for schema_dir in "$CLAUDE_DIR/openspec/schemas/"*/; do
+  [ -d "$schema_dir" ] || continue
+  schema_name=$(basename "$schema_dir")
+  if [ -e "$OPENSPEC_USER_SCHEMAS/$schema_name" ] && [ ! -L "$OPENSPEC_USER_SCHEMAS/$schema_name" ]; then
+    warn "$OPENSPEC_USER_SCHEMAS/$schema_name exists and is not a symlink — skipping"
+    continue
+  fi
+  log "Linking OpenSpec schema '$schema_name'..."
+  ln -sfn "${schema_dir%/}" "$OPENSPEC_USER_SCHEMAS/$schema_name"
+done
+
+# Ensure global gitignore entries Claude Code relies on (idempotent append).
+# ~/.config/git/ignore is git's XDG default — no core.excludesFile config needed.
+GIT_IGNORE_GLOBAL="$HOME/.config/git/ignore"
+mkdir -p "$(dirname "$GIT_IGNORE_GLOBAL")"
+touch "$GIT_IGNORE_GLOBAL"
+for ignore_entry in "**/.claude/settings.local.json" ".claude/worktrees/"; do
+  if ! grep -qxF "$ignore_entry" "$GIT_IGNORE_GLOBAL"; then
+    log "Adding '$ignore_entry' to global gitignore"
+    echo "$ignore_entry" >> "$GIT_IGNORE_GLOBAL"
+  fi
 done
 
 # Merge Claude settings fragment into real settings
