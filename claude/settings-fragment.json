@@ -105,7 +105,6 @@
 			"mcp__plugin_playwright_playwright__browser_navigate",
 			"mcp__plugin_playwright_playwright__browser_snapshot",
 			"mcp__plugin_playwright_playwright__browser_take_screenshot",
-			"mcp__plugin_supabase_supabase__*",
 			"Read",
 			"Skill(commit-commands:*)",
 			"WebFetch(domain:api.github.com)",
