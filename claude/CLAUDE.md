@@ -53,8 +53,9 @@ Default: **parallel where safe, sequential only when required.** A single messag
 
 - **`Agent(subagent_type=Explore)`** — broad codebase questions, "how does X work", anything spanning >2 files. Always prefer this over manual `Read`/`Grep` chains. Multiple Explore calls in one message → parallel research.
 - **`Agent(subagent_type=Plan)`** — Tier 2 implementation strategy before starting work.
-- **`TeamCreate`** — coordinated implementation work where multiple subagents share team context (implementer + spec reviewer + code quality reviewer). Use whenever dispatching more than one subagent against the same plan. Pass `model: "sonnet"` (shorthand, not full model ID). Reuse team templates from `~/.claude/teams/`. Each subagent prompt is **self-contained**: include task text, context snippets, success criteria, expected output.
-- **Single-shot `Agent()` for implementation is rarely right.** A PreToolUse hook will warn you when it spots one — heed the nudge.
+- **Agent teams** — coordinated work where multiple agents run in parallel, share a task list, and message each other. As of Claude Code v2.1.178 there is no `TeamCreate` tool: a team forms automatically when the first teammate is spawned (gated by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Best for genuinely parallel, disjoint-file work. Each teammate prompt is **self-contained**: task text, context snippets, success criteria, expected output (teammates don't inherit the lead's history).
+- **Independent review, always** — the main thread NEVER reviews its own writes. For non-parallel work, orchestrate a warm **implementer subagent** (prefer background → returns an `agentId`; resume via `SendMessage` to rework, never re-spawn fresh) plus independent **spec-validator** and **code-reviewer** subagents in parallel. Objectivity without team overhead.
+- **`model: "sonnet"` (shorthand) on every spawn** — EU Bedrock needs region-prefixed IDs set via env vars; only the shorthand resolves correctly. Project-specific dispatch detail (e.g. an OpenSpec apply loop) belongs in that project's schema/skill, not here.
 
 **Parallel implementation OK** when plan tasks touch disjoint files (no shared edits, no ordering constraint). **Stay sequential** when tasks edit the same file, depend on each other's outputs, or where ordering is part of the design (e.g., add the type before the consumer).
 
@@ -76,7 +77,6 @@ Validation runs in layers — rely on them rather than running checks manually:
 1. **LSP (live):** typescript-lsp surfaces diagnostics as you edit — consult them after each edit instead of running `tsc` ad hoc
 2. **`PostToolUse` → `biome.sh`:** auto-formats and lint-fixes edited files; unfixable lint errors come back as hook feedback — fix them before moving on. Include imports in the same edit as their usage (unused imports are auto-removed). When an import must temporarily exist before its consumer, add `// biome-ignore lint/correctness/noUnusedImports: <reason>` and remove the comment in the same edit that introduces the consumer.
 3. **`Stop` → `stop-typecheck.sh`:** project-wide `tsc --noEmit` runs once at end of turn; failures block completion until types are clean. Don't end a turn expecting type errors to slide.
-4. **`PreToolUse` → `agent-teams-nudge.sh`:** warns (doesn't block) when coordinated implementation work should use `TeamCreate`; Explore/Plan are exempt.
 
 All hooks no-op for projects/file types they don't apply to. Don't run formatters/linters/type-checkers manually — the hooks handle them.
 

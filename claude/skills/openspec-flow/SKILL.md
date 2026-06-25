@@ -59,11 +59,25 @@ earning anything.
 ## 4. Tasks + Apply
 
 - `openspec instructions tasks --change <name>` — TDD groups
-  (RED → GREEN → REFACTOR) with per-group **Verify** commands, parallelism
-  annotated.
-- Apply per the schema's apply instruction: TeamCreate for multi-group lists
-  (implementer + spec-conformance reviewer + code-quality reviewer),
-  parallel only for groups marked parallel-safe. Mark checkboxes as you go.
+  (RED → GREEN → REFACTOR) with per-group **Verify** commands. Tag groups
+  that are safe to run concurrently with `[batch: <id>]` — same id only for
+  groups touching disjoint files with no dependency edge; default sequential.
+- **Approval gate:** apply does not begin automatically. Summarise the task
+  plan and get explicit human approval before any implementation.
+- **Isolation:** after approval, move into a native worktree (`EnterWorktree`,
+  `.claude/worktrees/`) for the apply work.
+- **Dispatch (schema `apply` block is authoritative; this restates it):**
+  - Non-trivial context-gathering → read-only `Agent(subagent_type=Explore)`.
+  - Per task group, the main thread NEVER reviews its own writes: spawn a
+    warm **implementer** subagent (prefer background → resume via `SendMessage`
+    to its `agentId`, never re-spawn fresh) following TDD, then dispatch an
+    independent **spec validator** and **code reviewer** in parallel; iterate
+    until both pass; main arbitrates, escalates to the human if it can't.
+  - Groups sharing a `[batch:]` tag → an **agent team**, one implementer
+    teammate per group (teams auto-form; no `TeamCreate`). Verify task status
+    is truly updated before unblocking dependents.
+  - `model: "sonnet"` (shorthand) on every spawn. One conventional commit per
+    task group. Mark checkboxes as you go.
 - Real-time validation is ambient (LSP, biome hook, Stop typecheck gate) —
   don't run formatters/linters manually.
 
