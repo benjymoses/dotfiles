@@ -67,7 +67,6 @@
 			"Bash(mkdir:*)",
 			"Bash(mv:*)",
 			"Bash(node:*)",
-			"Bash(nvm use:*)",
 			"Bash(openspec:*)",
 			"Bash(playwright:*)",
 			"Bash(pnpm:*)",
@@ -103,6 +102,7 @@
 			"mcp__plugin_playwright_playwright__browser_evaluate",
 			"mcp__plugin_playwright_playwright__browser_fill_form",
 			"mcp__plugin_playwright_playwright__browser_navigate",
+			"mcp__plugin_playwright_playwright__browser_run_code",
 			"mcp__plugin_playwright_playwright__browser_snapshot",
 			"mcp__plugin_playwright_playwright__browser_take_screenshot",
 			"Read",
@@ -157,7 +157,13 @@
 		"defaultMode": "default",
 		"additionalDirectories": [
 			"/tmp",
-			"/private/tmp"
+			"/private/tmp",
+			"~/Library/pnpm/store",
+			"~/.npm",
+			"~/.claude/plugins",
+			"~/Library/Caches/typescript",
+     		"~/Library/Caches/dev.biomejs.biome",
+     	 	"~/Library/Caches/ms-playwright"
 		]
 	},
 	"hooks": {
@@ -167,7 +173,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "/Users/benmoses/.claude/DesktopNotification.app/Contents/MacOS/applet"
+						"command": "/opt/homebrew/bin/terminal-notifier -title 'Claude Code' -message 'Claude Code needs your attention' -sound Glass"
 					}
 				]
 			}
@@ -234,7 +240,12 @@
 				"objects.githubusercontent.com",
 				"raw.githubusercontent.com",
 				"pypi.org",
-				"files.pythonhosted.org"
+				"files.pythonhosted.org",
+				"cli.cdk.dev-tools.aws.dev",
+				"biomejs.dev",
+        		"pnpm.io",
+        		"amazonaws.com",
+        		"*.amazonaws.com"
 			],
 			"allowLocalBinding": true,
 			"allowAllUnixSockets": true,
@@ -276,6 +287,8 @@
 		}
 	},
 	"tui": "fullscreen",
+	"awaySummaryEnabled": true,
+	"skipWorkflowUsageWarning": true,
 	"autoUpdatesChannel": "stable",
 	"theme": "dark-ansi",
 	"teammateMode": "tmux",

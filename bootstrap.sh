@@ -205,9 +205,10 @@ packages=(
   "jq"
   "stow"
   "uv"
-  "pyenv",
-  "rtk",
+  "mise"
+  "rtk"
   "wezterm"
+  "terminal-notifier"
   "zsh-autosuggestions"
   "zsh-syntax-highlighting"
   "font-fira-code-nerd-font"
