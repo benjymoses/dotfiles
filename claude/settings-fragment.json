@@ -162,8 +162,8 @@
 			"~/.npm",
 			"~/.claude/plugins",
 			"~/Library/Caches/typescript",
-     		"~/Library/Caches/dev.biomejs.biome",
-     	 	"~/Library/Caches/ms-playwright"
+			"~/Library/Caches/dev.biomejs.biome",
+			"~/Library/Caches/ms-playwright"
 		]
 	},
 	"hooks": {
@@ -230,6 +230,7 @@
 		"enabled": true,
 		"autoAllowBashIfSandboxed": true,
 		"allowUnsandboxedCommands": true,
+		"excludedCommands": ["git push", "git branch", "git remote", "git config"],
 		"network": {
 			"allowedDomains": [
 				"registry.npmjs.org",
@@ -243,9 +244,9 @@
 				"files.pythonhosted.org",
 				"cli.cdk.dev-tools.aws.dev",
 				"biomejs.dev",
-        		"pnpm.io",
-        		"amazonaws.com",
-        		"*.amazonaws.com"
+				"pnpm.io",
+				"amazonaws.com",
+				"*.amazonaws.com"
 			],
 			"allowLocalBinding": true,
 			"allowAllUnixSockets": true,
@@ -282,7 +283,8 @@
 				"~/.ssh/id_ecdsa",
 				"~/.ssh/known_hosts",
 				"~/.ssh/config",
-				"~/.config/gh/**"
+				"~/.config/gh/**",
+				"~/Library/Keychains/**"
 			]
 		}
 	},
