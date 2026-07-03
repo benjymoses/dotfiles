@@ -26,6 +26,7 @@ When a project lacks `.claude/CONTEXT.md` and you learn something future session
 - For Node prefer PNPM (and `pnpx`). If a `package-lock.json` exists, ask whether to run `pnpm import` and delete it
 - For Python prefer UV and project files
 - Always verify exact key names and valid values by reading the relevant documentation or schema before making changes — do not guess
+- **Reach for the docs MCP before guessing on fast-moving platforms.** When figuring out *how* to do something on a platform with a live MCP server (Context7 for any library/framework, Supabase, Vercel), prefer a quick MCP lookup over recalling from training — these APIs drift and your memory is often stale. Default to checking; skip it only when you've verified the pattern this session or it's genuinely stable core knowledge.
 - Always expand `~` to full absolute paths when writing to config files or passing paths to tools — use `$HOME` or the resolved path
 
 # Shell Command Style
@@ -55,6 +56,7 @@ Default: **parallel where safe, sequential only when required.** A single messag
 - **Agent teams** — for genuinely parallel, disjoint-file work, multiple agents can run in parallel, share a task list, and message each other. The **team-spawn mechanism** (how teams form, the enabling env var, teammate prompt shape) lives in full in the `openspec-flow` skill and the `spec-driven-plus` apply block — defer to them; don't restate it here.
 - **Independent review, always** — the main thread NEVER reviews its own writes. For non-parallel work, orchestrate a warm **implementer subagent** (prefer background → returns an `agentId`; resume via `SendMessage` to rework, never re-spawn fresh) plus independent **spec-validator** and **code-reviewer** subagents in parallel. Objectivity without team overhead.
 - **`model: "sonnet"` (shorthand) on every spawn** — EU Bedrock needs region-prefixed IDs set via env vars; only the shorthand resolves correctly. Project-specific dispatch detail (e.g. an OpenSpec apply loop) belongs in that project's schema/skill, not here.
+- **Kill teammates when done** — every spawned teammate MUST be explicitly terminated (`TaskStop`) once its work is accepted and no longer needed. Never leave idle teammates running: without an active handle they accumulate, and the only recovery is manual cleanup or killing and re-launching the Claude process. Before ending a turn that spawned a team, confirm no orphaned teammates remain. (Background implementer/review subagents from the non-team path should likewise be stopped once their output is consumed.)
 
 **Parallel implementation OK** when plan tasks touch disjoint files (no shared edits, no ordering constraint). **Stay sequential** when tasks edit the same file, depend on each other's outputs, or where ordering is part of the design (e.g., add the type before the consumer).
 

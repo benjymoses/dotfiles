@@ -150,6 +150,15 @@ When the user confirms the PR is merged:
 - Never skip the proposal pause in Tier 2 — user approval gates implementation.
 - Never improvise around a spec that turns out wrong; surface it.
 - Keep every artifact at the depth the schema instruction demands and no more.
+- **`openspec ... --json` output is consumed directly — never pipe it.** The
+  `--json` flag is deliberate: these commands return structured fields
+  (`contextFiles`, `resolvedOutputPath`, progress, `actionContext`) that must
+  be parsed reliably, so always keep it. But read the JSON yourself — do NOT
+  pipe it through `python`/`python3 -c`/`jq`/`node`/any interpreter to
+  reformat it. Inline interpreter invocations are arbitrary code execution
+  that trip the permission gate on every call and add nothing: you parse JSON
+  natively and summarise in prose without a helper. Run openspec commands
+  bare, as single (non-compound) invocations.
 
 ## References
 
