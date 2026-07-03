@@ -1,0 +1,373 @@
+name: spec-driven-plus
+version: 1
+description: Ben's PLUS OpenSpec workflow - proposal → specs → design → tasks
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal document outlining the change
+    template: proposal.md
+    instruction: >
+      Create the proposal document that establishes WHY this change is needed.
+
+
+      Sections:
+
+      - **Why**: 1-2 sentences on the problem or opportunity. What problem does
+      this solve? Why now?
+
+      - **What Changes**: Bullet list of changes. Be specific about new
+      capabilities, modifications, or removals. Mark breaking changes with
+      **BREAKING**.
+
+      - **Capabilities**: Identify which specs will be created or modified:
+        - **New Capabilities**: List capabilities being introduced. Each becomes a new `specs/<name>/spec.md`. Use kebab-case names (e.g., `user-auth`, `data-export`).
+        - **Modified Capabilities**: List existing capabilities whose REQUIREMENTS are changing. Only include if spec-level behavior changes (not just implementation details). Each needs a delta spec file. Check `openspec/specs/` for existing spec names. Leave empty if no requirement changes.
+      - **Impact**: Affected code, APIs, dependencies, or systems.
+
+
+      IMPORTANT: The Capabilities section is critical. It creates the contract
+      between
+
+      proposal and specs phases. Research existing specs before filling this in.
+
+      Each capability listed here will need a corresponding spec file.
+
+
+      Keep it concise (1-2 pages). Focus on the "why" not the "how" -
+
+      implementation details belong in design.md.
+
+
+      This is the foundation - specs, design, and tasks all build on this.
+    requires: []
+  - id: specs
+    generates: specs/**/*.md
+    description: Detailed specifications for the change
+    template: spec.md
+    instruction: >
+      Create specification files that define WHAT the system should do.
+
+
+      Create one spec file per capability listed in the proposal's Capabilities
+      section.
+
+      - New capabilities: use the exact kebab-case name from the proposal
+      (specs/<capability>/spec.md).
+
+      - Modified capabilities: use the existing spec folder name from
+      openspec/specs/<capability>/ when creating the delta spec at
+      specs/<capability>/spec.md.
+
+
+      Delta operations (use ## headers):
+
+      - **ADDED Requirements**: New capabilities
+
+      - **MODIFIED Requirements**: Changed behavior - MUST include full updated
+      content
+
+      - **REMOVED Requirements**: Deprecated features - MUST include **Reason**
+      and **Migration**
+
+      - **RENAMED Requirements**: Name changes only - use FROM:/TO: format
+
+
+      Format requirements:
+
+      - Each requirement: `### Requirement: <name>` followed by description
+
+      - Use SHALL/MUST for normative requirements (avoid should/may)
+
+      - Each scenario: `#### Scenario: <name>` with WHEN/THEN format
+
+      - **CRITICAL**: Scenarios MUST use exactly 4 hashtags (`####`). Using 3
+      hashtags or bullets will fail silently.
+
+      - Every requirement MUST have at least one scenario.
+
+
+      MODIFIED requirements workflow:
+
+      1. Locate the existing requirement in openspec/specs/<capability>/spec.md
+
+      2. Copy the ENTIRE requirement block (from `### Requirement:` through all
+      scenarios)
+
+      3. Paste under `## MODIFIED Requirements` and edit to reflect new behavior
+
+      4. Ensure header text matches exactly (whitespace-insensitive)
+
+
+      Common pitfall: Using MODIFIED with partial content loses detail at
+      archive time.
+
+      If adding new concerns without changing existing behavior, use ADDED
+      instead.
+
+
+      Example:
+
+      ```
+
+      ## ADDED Requirements
+
+
+      ### Requirement: User can export data
+
+      The system SHALL allow users to export their data in CSV format.
+
+
+      #### Scenario: Successful export
+
+      - **WHEN** user clicks "Export" button
+
+      - **THEN** system downloads a CSV file with all user data
+
+
+      ## REMOVED Requirements
+
+
+      ### Requirement: Legacy export
+
+      **Reason**: Replaced by new export system
+
+      **Migration**: Use new export endpoint at /api/v2/export
+
+      ```
+
+
+      Specs should be testable - each scenario is a potential test case.
+    requires:
+      - proposal
+  - id: design
+    generates: design.md
+    description: Technical design document with implementation details
+    template: design.md
+    instruction: >
+      Create the design document that explains HOW to implement the change.
+
+
+      When to include design.md (create only if any apply):
+
+      - Cross-cutting change (multiple services/modules) or new architectural
+      pattern
+
+      - New external dependency or significant data model changes
+
+      - Security, performance, or migration complexity
+
+      - Ambiguity that benefits from technical decisions before coding
+
+
+      Sections:
+
+      - **Context**: Background, current state, constraints, stakeholders
+
+      - **Goals / Non-Goals**: What this design achieves and explicitly excludes
+
+      - **Decisions**: Key technical choices with rationale (why X over Y?).
+      Include alternatives considered for each decision.
+
+      - **Risks / Trade-offs**: Known limitations, things that could go wrong.
+      Format: [Risk] → Mitigation
+
+      - **Migration Plan**: Steps to deploy, rollback strategy (if applicable)
+
+      - **Open Questions**: Outstanding decisions or unknowns to resolve
+
+
+      Focus on architecture and approach, not line-by-line implementation.
+
+      Reference the proposal for motivation and specs for requirements.
+
+
+      Good design docs explain the "why" behind technical decisions.
+    requires:
+      - proposal
+  - id: tasks
+    generates: tasks.md
+    description: Implementation checklist with trackable tasks
+    template: tasks.md
+    instruction: >
+      Create the task list that breaks down the implementation work.
+
+
+      **IMPORTANT: Follow the template below exactly.** The apply phase parses
+
+      checkbox format to track progress. Tasks not using `- [ ]` won't be
+      tracked.
+
+
+      Guidelines:
+
+      - Group related tasks under ## numbered headings
+
+      - Each task MUST be a checkbox: `- [ ] X.Y Task description`
+
+      - Tasks should be small enough to complete in one session
+
+      - Each task should be verifiable - you know when it's done
+
+
+      Ordering rules (MANDATORY - the apply phase executes groups top to
+      bottom):
+
+      - Order task groups strictly by dependency. A group MUST appear after
+      every group it depends on. If group B consumes a type, module, or
+      output produced by group A, B comes after A. Never write a task before
+      the work it relies on.
+
+      - When in doubt about whether two groups are independent, order them
+      sequentially rather than guessing.
+
+      - Parallelisation annotation (optional): mark groups that are safe to
+      run concurrently by appending `[batch: <id>]` to the group heading
+      (e.g. `## 2. API layer [batch: A]` and `## 3. UI layer [batch: A]`).
+      Only assign the SAME batch id to groups that (a) touch provably
+      disjoint files AND (b) have no dependency edge between them. If either
+      condition is unmet, leave them unbatched - the default is sequential.
+      The Final Validation group is NEVER batched. Apply uses these tags to
+      decide concurrency; when unsure, do not annotate.
+
+      - The FINAL group MUST be a "## N. Final Validation" group containing
+      end-to-end / whole-change verification (full test suite, build,
+      behavioural checks against the spec scenarios). This group MUST be
+      last - never place end-to-end or "final validation" tasks in the
+      middle of the list, even if they were drafted earlier. Per-group
+      verification of a single group's work still lives inside that group;
+      the Final Validation group is for validating the change as a whole.
+
+
+      Example:
+
+      ```
+
+      ## 1. Setup
+
+
+      - [ ] 1.1 Create new module structure
+
+      - [ ] 1.2 Add dependencies to package.json
+
+
+      ## 2. Core Implementation
+
+
+      - [ ] 2.1 Implement data export function
+
+      - [ ] 2.2 Add CSV formatting utilities
+
+
+      ## 3. Final Validation
+
+
+      - [ ] 3.1 Run the full test suite and build
+
+      - [ ] 3.2 Verify each spec scenario end-to-end
+
+      ```
+
+
+      Reference specs for what needs to be built, and the design (if one was
+      written — it is optional) for how to build it.
+
+      - Give each non-final group a **Verify** step: a concrete command or
+      check that proves the group's work (e.g. `- [ ] 1.3 Verify: pnpm test
+      path/to/file`). The apply phase runs these per group; the trailing
+      Final Validation group still validates the change as a whole.
+    requires:
+      - specs
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    APPROVAL GATE (MANDATORY FIRST STEP — do this before any other action):
+    Apply does NOT begin automatically once tasks exist. The completed task
+    list is the cheap moment to be wrong, so it MUST be approved by a human
+    first.
+
+    1. Read the context files (proposal, specs, design, tasks).
+    2. Present a concise summary of the task plan to the user: the task
+       groups in order, what each delivers, and anything that changed your
+       understanding since the proposal.
+    3. Explicitly ask the user to approve the task list before implementation
+       (use the AskUserQuestion tool). STOP and wait for their response.
+    4. Do NOT edit any implementation file, create a branch/worktree, or mark
+       any task complete until the user has approved. If they request changes,
+       revise the tasks artifact and re-request approval.
+
+    Only after approval, proceed with the execution model below.
+
+    ISOLATION (do this once, after approval, before any implementation):
+    Move into a git worktree for the change using the EnterWorktree tool
+    (native location under .claude/worktrees/ — never a manual `git worktree
+    add` to an external path). All apply work happens in the worktree; it is
+    cleaned up when the change is done. The planning branch already holds the
+    artifacts; the worktree branches from it.
+
+    EXPLORATION:
+    For any non-trivial context-gathering (anything spanning more than ~2
+    files, or "how does X work" questions), dispatch a read-only Explore
+    subagent rather than spidering files on the main thread. Trivial lookups
+    can stay inline.
+
+    IMPLEMENTATION — the per-task-group loop (objectivity is non-negotiable;
+    the main thread NEVER reviews its own writes):
+    For each task group, in order:
+    1. Spawn an implementer to do the group's work following TDD
+       (RED → GREEN → REFACTOR). Prefer a background subagent so it returns
+       an agentId you can resume with its context intact (SendMessage to that
+       agentId — do NOT start a fresh agent, which loses context). The
+       ambient hooks (LSP, biome, typecheck) force it to iterate until clean.
+    2. When the implementer reports done, dispatch TWO independent reviewers
+       concurrently (one message, parallel):
+       - a SPEC VALIDATOR: validate the implementation against the truth of
+         the spec — every relevant scenario must be satisfied, nothing
+         invented, nothing missed. Reports conformance gaps.
+       - a CODE REVIEWER: review for architecture, coding standards, project
+         conventions (CLAUDE.md), and good practice — intent as per spec, not
+         goldplating. Reports concrete, actionable findings.
+    3. If either reviewer finds rework, resume the still-warm implementer
+       (via its agentId) with the consolidated findings and iterate. Re-run
+       the reviewers on the changes. Repeat until both reviewers are
+       satisfied.
+    4. The main thread arbitrates conflicts between reviewers and implementer.
+       If it cannot arbitrate (genuine ambiguity, spec gap, competing valid
+       opinions), STOP and ask the human (AskUserQuestion).
+    5. Before marking the group complete, the main thread MUST confirm the
+       work is actually done and every checkbox in the group is ticked —
+       never rely on a sub-agent's self-report alone. Then make ONE
+       conventional commit for the whole group (not per subtask): a rewind
+       point per iterative chunk. Reference the issue/change in the message.
+    6. Move to the next group.
+
+    PARALLEL GROUPS:
+    When consecutive groups share a `[batch: <id>]` tag (assigned at task
+    time only for disjoint-file, no-dependency groups), run them
+    concurrently: spin up an agent team with one implementer-teammate per
+    batched group, each owning its own files, then apply the same
+    spec-validator + reviewer loop per group. Verify each task's status is
+    truly updated before treating dependents as unblocked (teammate
+    task-status can lag). Untagged groups always run sequentially via the
+    single-implementer loop above.
+
+    TEAM MECHANISM (current — this schema and the openspec-flow skill are the
+    authority; do not restate it in CLAUDE.md): there is no `TeamCreate` tool
+    (removed in Claude Code v2.1.178). A team auto-forms when the first
+    teammate is spawned, gated by the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+    environment variable. Each teammate prompt is self-contained (task text,
+    context, success criteria, expected output — teammates do not inherit the
+    lead's history). Pass `model: "sonnet"` (shorthand) on every spawn (EU
+    Bedrock needs region-prefixed model IDs set via env vars; only the
+    shorthand resolves). The durable contract — roles (implementer, spec
+    validator, reviewer), the warm-resume rework loop, human arbitration,
+    per-group commits — holds even as the spawn tooling evolves; if the tool
+    surface changes, prefer the installed reality over this note.
+
+    Pause if you hit blockers or need clarification.
+
+    CLOSE-OUT (after all task groups are done): the schema format has no
+    phase after apply. The verify → review → PR → merge-back → archive
+    close-out lives in the `openspec-flow` skill (sections 5–7) — follow it
+    there to close the loop.
