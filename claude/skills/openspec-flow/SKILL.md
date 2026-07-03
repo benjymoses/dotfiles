@@ -14,14 +14,17 @@ earning anything.
 - If given an issue number/URL: `gh issue view <n>` — read title, body, labels,
   linked discussions. The issue is the "why"; distil it, don't restate it.
 - If given a description: that's the brief.
-- Restate the goal in one sentence and classify the tier (see CLAUDE.md
-  Workflow Tiering). If genuinely uncertain, ask once with `AskUserQuestion`.
+- Restate the goal in one sentence and classify the tier. This table is the
+  authoritative tier definition — match process weight to work size. If
+  genuinely uncertain between tiers, ask once with `AskUserQuestion`; "go" /
+  "looks good" means continue to the next step in the active tier, never skip
+  steps.
 
-| Tier | Route |
-|---|---|
-| 0 — typo / one-liner | Skip OpenSpec entirely. Edit, verify, done (§7a only if asked to PR). No worktree. |
-| 1 — 1–3 files, clear scope | Skip OpenSpec. Plain feature branch (no worktree), implement directly with TDD where tests make sense, then §§5–7 |
-| 2 — multi-file / architectural / feature | Full flow below |
+| Tier | Scope | Route |
+|---|---|---|
+| 0 — typo / one-liner / <20 LOC | trivial, no decisions | Skip OpenSpec entirely. Edit, verify, done (§7a only if asked to PR). No worktree. |
+| 1 — 1–3 files, clear scope | no architectural decisions | Skip OpenSpec. Plain feature branch (no worktree), clarify anything ambiguous (1–2 questions max), implement directly with TDD where tests make sense, then §§5–7. |
+| 2 — multi-file / architectural / shared infra | anything framed as a feature | Full flow below. |
 
 ## 1. Setup (Tier 2)
 
@@ -75,10 +78,16 @@ earning anything.
     independent **spec validator** and **code reviewer** in parallel; iterate
     until both pass; main arbitrates, escalates to the human if it can't.
   - Groups sharing a `[batch:]` tag → an **agent team**, one implementer
-    teammate per group (teams auto-form; no `TeamCreate`). Verify task status
-    is truly updated before unblocking dependents.
-  - `model: "sonnet"` (shorthand) on every spawn. One conventional commit per
-    task group. Mark checkboxes as you go.
+    teammate per group. **Team mechanism (current):** there is no `TeamCreate`
+    tool (removed in Claude Code v2.1.178) — a team auto-forms when the first
+    teammate is spawned, gated by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
+    Each teammate prompt is self-contained (task text, context, success
+    criteria, expected output — teammates don't inherit the lead's history).
+    Verify each task's status is truly updated before unblocking dependents
+    (teammate status can lag).
+  - **`model: "sonnet"` (shorthand) on every spawn** — EU Bedrock needs
+    region-prefixed model IDs (set via env vars); only the shorthand resolves
+    correctly. One conventional commit per task group. Mark checkboxes as you go.
 - Real-time validation is ambient (LSP, biome hook, Stop typecheck gate) —
   don't run formatters/linters manually.
 

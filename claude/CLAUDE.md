@@ -39,13 +39,12 @@ Commands run in a sandbox with auto-allow — simple commands matching the permi
 
 # Workflow Tiering
 
-Match process weight to work size:
-
-- **Tier 0** — typo / one-line / <20 LOC: direct edit, verify after. No ceremony.
-- **Tier 1** — 1–3 files, clear scope, no architectural decisions: clarify anything ambiguous (1–2 questions max), implement directly, verify before claiming done.
-- **Tier 2** — multi-file / architectural / shared infra / anything framed as a feature: spec-driven via **OpenSpec** (`openspec` CLI). Create a change proposal → specs → design (only when the design criteria apply) → TDD-structured tasks → apply → archive on completion. Use the project's schema if present, otherwise the user-level default.
-
-When uncertain between tiers, ask once with `AskUserQuestion`. "Go" / "looks good" means continue to the next step in the active tier — never skip steps.
+Match process weight to work size. The **`openspec-flow` skill** (§0 Intake)
+holds the authoritative tier table (0/1/2) and routing, and loads whenever work
+is classified. In short: Tier 0/1 = direct edit / small scoped change; Tier 2 =
+multi-file / architectural / feature → spec-driven via **OpenSpec** (`openspec`
+CLI; project schema if present, else the user-level default). Do not restate the
+full tier definitions here — defer to the skill.
 
 # Sub Agents & Parallelism
 
@@ -53,13 +52,13 @@ Default: **parallel where safe, sequential only when required.** A single messag
 
 - **`Agent(subagent_type=Explore)`** — broad codebase questions, "how does X work", anything spanning >2 files. Always prefer this over manual `Read`/`Grep` chains. Multiple Explore calls in one message → parallel research.
 - **`Agent(subagent_type=Plan)`** — Tier 2 implementation strategy before starting work.
-- **Agent teams** — coordinated work where multiple agents run in parallel, share a task list, and message each other. As of Claude Code v2.1.178 there is no `TeamCreate` tool: a team forms automatically when the first teammate is spawned (gated by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Best for genuinely parallel, disjoint-file work. Each teammate prompt is **self-contained**: task text, context snippets, success criteria, expected output (teammates don't inherit the lead's history).
+- **Agent teams** — for genuinely parallel, disjoint-file work, multiple agents can run in parallel, share a task list, and message each other. The **team-spawn mechanism** (how teams form, the enabling env var, teammate prompt shape) lives in full in the `openspec-flow` skill and the `spec-driven-plus` apply block — defer to them; don't restate it here.
 - **Independent review, always** — the main thread NEVER reviews its own writes. For non-parallel work, orchestrate a warm **implementer subagent** (prefer background → returns an `agentId`; resume via `SendMessage` to rework, never re-spawn fresh) plus independent **spec-validator** and **code-reviewer** subagents in parallel. Objectivity without team overhead.
 - **`model: "sonnet"` (shorthand) on every spawn** — EU Bedrock needs region-prefixed IDs set via env vars; only the shorthand resolves correctly. Project-specific dispatch detail (e.g. an OpenSpec apply loop) belongs in that project's schema/skill, not here.
 
 **Parallel implementation OK** when plan tasks touch disjoint files (no shared edits, no ordering constraint). **Stay sequential** when tasks edit the same file, depend on each other's outputs, or where ordering is part of the design (e.g., add the type before the consumer).
 
-**Worktrees:** use native support only — `EnterWorktree` or `Agent(isolation: "worktree")` — which puts them in `.claude/worktrees/` inside the repo (sandbox-friendly, auto-cleaned for subagents). Never create worktrees manually at sibling or home-directory paths. Projects needing `.env`-style untracked files in worktrees should have a `.worktreeinclude` file.
+**Worktrees:** managed by the OpenSpec flow — the `openspec-flow` skill and the `spec-driven-plus` apply block are the single source of truth for when and how to use them. Don't restate worktree mechanics here.
 
 # Memory
 
