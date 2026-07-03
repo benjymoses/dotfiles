@@ -1,6 +1,6 @@
 ---
 name: openspec-flow
-description: End-to-end spec-driven delivery loop. Takes a GitHub issue number, issue URL, or feature/bug description; classifies the work (Tier 0/1/2); for Tier 2 drives OpenSpec (ben-flow schema) through proposal → specs → design → tasks → team-dispatched TDD apply; verifies, reviews, and closes the loop with a well-formed PR. Use when asked to "pick up issue #N", "start work on", "implement feature X", or any task that smells like a feature or non-trivial bug fix.
+description: End-to-end spec-driven delivery loop. Takes a GitHub issue number, issue URL, or feature/bug description; classifies the work (Tier 0/1/2); for Tier 2 drives OpenSpec (spec-driven-plus schema) through proposal → specs → design → tasks → subagent/team-dispatched TDD apply; verifies, reviews, and closes the loop with a well-formed PR. Use when asked to "pick up issue #N", "start work on", "implement feature X", or any task that smells like a feature or non-trivial bug fix.
 ---
 
 # OpenSpec Flow
@@ -19,16 +19,17 @@ earning anything.
 
 | Tier | Route |
 |---|---|
-| 0 — typo / one-liner | Skip OpenSpec entirely. Edit, verify, done (step 6 only if asked to PR) |
-| 1 — 1–3 files, clear scope | Skip OpenSpec. Branch, implement directly with TDD where tests make sense, then steps 5–7 |
+| 0 — typo / one-liner | Skip OpenSpec entirely. Edit, verify, done (§7a only if asked to PR). No worktree. |
+| 1 — 1–3 files, clear scope | Skip OpenSpec. Plain feature branch (no worktree), implement directly with TDD where tests make sense, then §§5–7 |
 | 2 — multi-file / architectural / feature | Full flow below |
 
 ## 1. Setup (Tier 2)
 
 - Ensure OpenSpec is initialised (`openspec/` exists); if not, run
-  `openspec init` and set `schema: ben-flow` in `openspec/config.yaml`.
-- For work on an existing repo with in-flight changes, prefer a worktree:
-  `EnterWorktree` (never manual `git worktree add` to sibling paths).
+  `openspec init` and set `schema: spec-driven-plus` in `openspec/config.yaml`.
+- Create a plain feature branch (`feat/<n>-<slug>` or `fix/<n>-<slug>`).
+  Planning (proposal → specs → design → tasks) happens here; the worktree is
+  entered later, at apply (§4), only after the approval gate.
 - Create the change: `openspec new change <kebab-name>`.
 
 ## 2. Proposal
@@ -98,21 +99,65 @@ earning anything.
   Fix what the change itself introduced (new dead exports, new duplication,
   complexity spikes). Pre-existing findings in touched files are out of
   scope here — note them for a later `groom` pass, don't expand the diff.
-- If review surfaces a spec-level problem, go back to step 3 — don't patch
+- If review surfaces a spec-level problem, go back to §3 — don't patch
   around a wrong spec.
 
-## 7. GitOps — close the loop
+## 7. Close the loop — two segments across the merge boundary
+
+The close-out spans local git, a PR, then a merge that happens on GitHub
+(outside the agent's turn). Run it as two segments with a hard pause at the
+PR.
+
+### 7a. Push + PR (agent), then STOP
 
 - Use the `commit-commands:commit-push-pr` skill. PR body must include:
   - `Closes #<issue>` when the work came from an issue
   - One-paragraph summary lifted from the proposal's Why
   - Link to the OpenSpec change directory for reviewers
   - Test plan: the Verify commands and what they prove
-- After the PR merges (or when the user says so): `openspec archive <name>`
-  to fold delta specs into `openspec/specs/`.
+- **STOP here.** Merging is the human's action on GitHub. Do not `gh pr merge`
+  unless the user explicitly asks. Tell the user the PR is up and you'll
+  resume the close-out once it's merged.
+
+### 7b. Merge-back + archive (resumed after merge)
+
+When the user confirms the PR is merged:
+
+- Exit the apply worktree first (`ExitWorktree`, remove) so you're back in
+  the primary checkout — Tier 2 apply always runs in one.
+- `git checkout main` → `git pull` → confirm the change is present in `main`
+  (e.g. the merge commit / `Closes #N` shows, key files match).
+- Delete the feature branch (local; the remote branch is usually auto-deleted
+  on merge — delete it too if not).
+- Run `/opsx:archive <name>`. **Archive handles sync itself** — it detects
+  delta specs, shows a combined summary, and prompts to sync into
+  `openspec/specs/` before moving the change to `changes/archive/`. Do NOT run
+  `/opsx:sync` separately first; it's redundant in the close-out (sync alone
+  is only for updating main specs *without* archiving). Let archive's built-in
+  prompts gate sync and any incomplete-artifact/task warnings.
 
 ## Rules
 
 - Never skip the proposal pause in Tier 2 — user approval gates implementation.
 - Never improvise around a spec that turns out wrong; surface it.
 - Keep every artifact at the depth the schema instruction demands and no more.
+
+## References
+
+The `openspec` CLI ships single-purpose skills for each step of the change
+lifecycle. This flow is the orchestration layer over them; reach for a
+reference file when you need the mechanics of one specific step. They live in
+`references/` alongside this skill (mirrors of the upstream `openspec` skills,
+vendored so the flow is self-contained).
+
+- [references/new-change.md](references/new-change.md) — starting a new change step-by-step; read when creating a change and stepping through artifacts one at a time.
+- [references/propose.md](references/propose.md) — generate a full proposal (proposal + design + specs + tasks) in one shot; read when the user wants everything scaffolded at once rather than stepwise.
+- [references/continue-change.md](references/continue-change.md) — create the next artifact in an in-progress change; read when resuming a change and unsure which artifact comes next.
+- [references/ff-change.md](references/ff-change.md) — fast-forward through all remaining artifacts to reach implementation quickly; read when the user wants to skip the per-artifact pauses.
+- [references/explore.md](references/explore.md) — explore-mode thinking partner for investigating ideas/requirements before or during a change; read when clarifying scope before committing to specs.
+- [references/apply-change.md](references/apply-change.md) — implement the tasks of a change; read for the mechanics of working through the task list (the spec-driven-plus `apply` block is authoritative for dispatch).
+- [references/verify-change.md](references/verify-change.md) — validate implementation matches the artifacts before archiving; read during §5 Verify to check completeness and coherence.
+- [references/sync-specs.md](references/sync-specs.md) — sync delta specs into main specs WITHOUT archiving; read only when updating main specs standalone (in close-out, archive handles sync — don't call this).
+- [references/archive-change.md](references/archive-change.md) — finalise and archive a completed change; read during §7b close-out (archive prompts for sync itself).
+- [references/bulk-archive-change.md](references/bulk-archive-change.md) — archive several completed changes at once; read when clearing multiple parallel changes together.
+- [references/onboard.md](references/onboard.md) — guided walk through a full OpenSpec cycle with narration; read when onboarding a repo or learning the workflow end-to-end.
