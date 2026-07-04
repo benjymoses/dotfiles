@@ -180,11 +180,11 @@
 		],
 		"PreToolUse": [
 			{
-				"matcher": "Agent",
+				"matcher": "Bash",
 				"hooks": [
 					{
 						"type": "command",
-						"command": "/Users/benmoses/.claude/hooks/agent-teams-nudge.sh"
+						"command": "/Users/benmoses/.claude/hooks/sleep-guard.sh"
 					}
 				]
 			}

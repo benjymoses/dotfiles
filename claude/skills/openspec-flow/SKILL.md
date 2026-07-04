@@ -22,12 +22,24 @@ earning anything.
 
 | Tier | Scope | Route |
 |---|---|---|
-| 0 — typo / one-liner / <20 LOC | trivial, no decisions | Skip OpenSpec entirely. Edit, verify, done (§7a only if asked to PR). No worktree. |
-| 1 — 1–3 files, clear scope | no architectural decisions | Skip OpenSpec. Plain feature branch (no worktree), clarify anything ambiguous (1–2 questions max), implement directly with TDD where tests make sense, then §§5–7. |
-| 2 — multi-file / architectural / shared infra | anything framed as a feature | Full flow below. |
+| 0 — typo / one-liner / <20 LOC | trivial, no decisions | Skip OpenSpec entirely. Ask branch-or-main (below), edit, verify, done (§7a only if on a branch and asked to PR). No worktree. |
+| 1 — 1–3 files, clear scope | no architectural decisions | Skip OpenSpec. Ask branch-or-main (below), clarify anything ambiguous (1–2 questions max), implement directly with TDD where tests make sense, then §§5–7 (skip §7 if on main). No worktree. |
+| 2 — multi-file / architectural / shared infra | anything framed as a feature | Full flow below. Always a feature branch + PR — never main. |
+
+**Branch-or-main (Tier 0/1 only):** before touching any file, ask via
+`AskUserQuestion`: work on a feature branch (then PR as usual) or directly on
+the current branch/main? This is the sanctioned carve-out from the project's
+never-push-to-main rule — it applies only when the user explicitly chooses
+main here, and never to Tier 2.
 
 ## 1. Setup (Tier 2)
 
+- **Planning model:** planning artefacts (proposal, specs, design, tasks,
+  ADRs) deserve the strongest model. Prompt the user to run `/model opus`
+  before planning starts (the agent cannot switch models itself); suggest
+  switching back to their usual model at the §4 approval gate, where
+  implementation is delegated to subagents anyway. If they decline, continue
+  on the session model.
 - Ensure OpenSpec is initialised (`openspec/` exists); if not, run
   `openspec init` and set `schema: spec-driven-plus` in `openspec/config.yaml`.
 - Create a plain feature branch (`feat/<n>-<slug>` or `fix/<n>-<slug>`).
@@ -40,7 +52,17 @@ earning anything.
 - Run `openspec instructions proposal --change <name>` and follow it.
 - Research before writing: existing specs (`openspec list --specs`), the
   affected code (dispatch `Agent(subagent_type=Explore)` for anything
-  spanning >2 files), and `.claude/CONTEXT.md` references.
+  spanning >2 files), and `.claude/CONTEXT.md` references. For platform or
+  library specifics (framework APIs, database features, hosting behaviour),
+  consult the relevant docs MCP (Context7, Supabase, Vercel, …) rather than
+  recalling from training — get implementation facts right at planning time.
+- **Front-load the questions.** Collect every open decision the research
+  surfaced — scope boundaries, UX choices, data-model options, naming,
+  trade-offs — and ask them via `AskUserQuestion` in batched calls (max 4
+  questions per call) BEFORE locking the artefact. The goal is a high-quality
+  plan agreed up front, not a stream of mid-implementation clarifications.
+  Repeat at each artefact (§2 proposal, §3 specs/design) as new decisions
+  appear; by the §4 approval gate there should be nothing left to ask.
 - JS/TS repos: check whether the affected area is already a known hotspot —
   `fallow health --format json --quiet 2>/dev/null || true` (see `fallow`
   skill for mechanics). High-complexity or heavily-duplicated targets are a
@@ -56,6 +78,10 @@ earning anything.
 - Design doc only if the schema's criteria apply (cross-cutting, new
   dependency, security/perf/migration complexity, genuine ambiguity).
   For architectural decisions worth a diagram, update `.claude/diagrams/`.
+- **ADRs:** any decision with genuine trade-offs (chosen X over Y for
+  reasons that matter later) gets an ADR in `docs/adr/`, following the
+  project's existing ADR format/numbering. Write it during design, commit it
+  with the planning artefacts — don't defer it to close-out.
 - Validate: `openspec validate <name>`. Fix what it flags.
 - For substantial designs, offer the user a review pause; for routine ones,
   proceed.
@@ -70,24 +96,44 @@ earning anything.
   plan and get explicit human approval before any implementation.
 - **Isolation:** after approval, move into a native worktree (`EnterWorktree`,
   `.claude/worktrees/`) for the apply work.
+- **Worktree bootstrap (immediately after EnterWorktree):** confirm the
+  project's `.env*` files arrived (a repo-root `.worktreeinclude` file copies
+  them into native worktrees automatically — check file *names* only, never
+  read contents; if missing, tell the user to add a `.worktreeinclude` rather
+  than copying secrets by hand), then run the project's install command
+  (`pnpm install` — fast, hardlinked from the store) so tests and builds work
+  from the first task.
 - **Dispatch (schema `apply` block is authoritative; this restates it):**
   - Non-trivial context-gathering → read-only `Agent(subagent_type=Explore)`.
   - Per task group, the main thread NEVER reviews its own writes: spawn a
-    warm **implementer** subagent (prefer background → resume via `SendMessage`
-    to its `agentId`, never re-spawn fresh) following TDD, then dispatch an
-    independent **spec validator** and **code reviewer** in parallel; iterate
-    until both pass; main arbitrates, escalates to the human if it can't.
+    warm **implementer** subagent (`subagent_type=implementer` — the persona
+    carries TDD method, incremental checkbox ticking, and `model: sonnet`;
+    prefer background → resume via `SendMessage` to its `agentId`, never
+    re-spawn fresh). When it reports done, dispatch
+    `subagent_type=spec-validator` (haiku) and `subagent_type=code-reviewer`
+    (sonnet) in parallel; iterate until both pass; main arbitrates, escalates
+    to the human if it can't. Reviewers gate the commit — review first, then
+    one conventional commit per group.
   - Groups sharing a `[batch:]` tag → an **agent team**, one implementer
-    teammate per group. **Team mechanism (current):** there is no `TeamCreate`
-    tool (removed in Claude Code v2.1.178) — a team auto-forms when the first
-    teammate is spawned, gated by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
-    Each teammate prompt is self-contained (task text, context, success
-    criteria, expected output — teammates don't inherit the lead's history).
-    Verify each task's status is truly updated before unblocking dependents
-    (teammate status can lag).
-  - **`model: "sonnet"` (shorthand) on every spawn** — EU Bedrock needs
-    region-prefixed model IDs (set via env vars); only the shorthand resolves
-    correctly. One conventional commit per task group. Mark checkboxes as you go.
+    teammate per group (same `implementer` persona as teammate type).
+    **Team mechanism (current):** there is no `TeamCreate` tool (removed in
+    Claude Code v2.1.178) — a team auto-forms when the first teammate is
+    spawned, gated by `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Each teammate
+    prompt is self-contained (task text, context, success criteria, expected
+    output — teammates don't inherit the lead's history). Verify each task's
+    status is truly updated before unblocking dependents (teammate status can
+    lag).
+  - **Idle discipline:** teammate/subagent messages and completion
+    notifications arrive automatically — after dispatching, end the turn and
+    wait. NEVER poll, loop, or issue `sleep` commands to pass time (a
+    sleep-guard hook denies busy-wait sleeps anyway).
+  - **Models:** personas carry their own `model:` frontmatter. Generic spawns
+    (Explore, Plan, ad-hoc agents) still pass `model: "sonnet"` (shorthand) —
+    EU Bedrock needs region-prefixed model IDs (set via env vars); only the
+    shorthand resolves correctly.
+  - **Teardown:** after each group's commit, `TaskStop` every agent spawned
+    for it (implementer + both reviewers; whole team for a batch). Never leave
+    idle teammates running.
 - Real-time validation is ambient (LSP, biome hook, Stop typecheck gate) —
   don't run formatters/linters manually.
 
@@ -138,12 +184,21 @@ When the user confirms the PR is merged:
   (e.g. the merge commit / `Closes #N` shows, key files match).
 - Delete the feature branch (local; the remote branch is usually auto-deleted
   on merge — delete it too if not).
+- **Knowledge-capture pass (before archiving):** sweep for what the change
+  taught us — memories to save or update, CLAUDE.md recommendations (propose,
+  don't silently edit), ADRs still owed from §3, and updates to
+  `docs/agents/*` (domain, issue-tracker) and `docs/diagrams/`. Make the doc
+  edits now so they ride the archive commit.
 - Run `/opsx:archive <name>`. **Archive handles sync itself** — it detects
   delta specs, shows a combined summary, and prompts to sync into
   `openspec/specs/` before moving the change to `changes/archive/`. Do NOT run
   `/opsx:sync` separately first; it's redundant in the close-out (sync alone
   is only for updating main specs *without* archiving). Let archive's built-in
   prompts gate sync and any incomplete-artifact/task warnings.
+- Commit the archived change + knowledge-capture edits directly to `main`
+  (one conventional commit, e.g. `docs(openspec): archive <name>`). This is
+  the second sanctioned carve-out from the never-push-to-main rule — it covers
+  only the archive/doc-capture commit, never implementation code.
 
 ## Rules
 
