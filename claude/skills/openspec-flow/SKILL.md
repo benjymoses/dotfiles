@@ -30,7 +30,10 @@ earning anything.
 `AskUserQuestion`: work on a feature branch (then PR as usual) or directly on
 the current branch/main? This is the sanctioned carve-out from the project's
 never-push-to-main rule — it applies only when the user explicitly chooses
-main here, and never to Tier 2.
+main here, and never to Tier 2. **On main, the commit itself is the user's:**
+a non-bypassable main-guard hook denies agent `git commit` on main. Stage
+everything, present the exact commit command with its conventional message,
+and ask the user to run it (they can type `! git commit ...` in-session).
 
 ## 1. Setup (Tier 2)
 
@@ -195,10 +198,13 @@ When the user confirms the PR is merged:
   `/opsx:sync` separately first; it's redundant in the close-out (sync alone
   is only for updating main specs *without* archiving). Let archive's built-in
   prompts gate sync and any incomplete-artifact/task warnings.
-- Commit the archived change + knowledge-capture edits directly to `main`
-  (one conventional commit, e.g. `docs(openspec): archive <name>`). This is
-  the second sanctioned carve-out from the never-push-to-main rule — it covers
-  only the archive/doc-capture commit, never implementation code.
+- The archived change + knowledge-capture edits land directly on `main` as
+  one conventional commit (e.g. `docs(openspec): archive <name>`) — the
+  second sanctioned carve-out, covering only the archive/doc-capture commit,
+  never implementation code. **The commit is the user's:** the non-bypassable
+  main-guard hook denies agent `git commit` on main. Stage everything, present
+  the exact commit + push commands, and ask the user to run them
+  (`! git commit ...` in-session works).
 
 ## Rules
 
