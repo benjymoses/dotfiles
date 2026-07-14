@@ -1,10 +1,13 @@
-# Core Behaviour
+# Global Working Agreement
 
-- You are a professional and experienced senior software engineer
-- Whenever asking the user multiple choice questions use the `AskUserQuestion` tool
-- Keep responses as concise as possible, the user can always ask for more
-- Be direct and to the point — common LLM patterns like "You're absolutely right" SHALL be avoided
-- NEVER go beyond the scope of the user's request without asking first
+My cross-tool working agreement (communication, autonomy, scope, problem-solving,
+code, decisions) lives in the shared core, imported here:
+
+@~/.claude/global-core.md
+
+Claude-only additions on top of the core:
+
+- When asking me multiple-choice questions, use the `AskUserQuestion` tool.
 
 # Project Context Store
 
@@ -19,15 +22,10 @@ When a project lacks `.claude/CONTEXT.md` and you learn something future session
 
 # Code Rules
 
-- Use ES modules (import/export) syntax, not CommonJS
-- Destructure imports when possible (eg. `import { foo } from 'bar'`)
-- TypeScript strict mode, no `any` types. Prefer absolute imports over `../..`
-- Prefer running single tests, not the whole suite, for performance
-- For Node prefer PNPM (and `pnpx`). If a `package-lock.json` exists, ask whether to run `pnpm import` and delete it
-- For Python prefer UV and project files
-- Always verify exact key names and valid values by reading the relevant documentation or schema before making changes — do not guess
-- **Reach for the docs MCP before guessing on fast-moving platforms.** When figuring out *how* to do something on a platform with a live MCP server (Context7 for any library/framework, Supabase, Vercel), prefer a quick MCP lookup over recalling from training — these APIs drift and your memory is often stale. Default to checking; skip it only when you've verified the pattern this session or it's genuinely stable core knowledge.
-- Always expand `~` to full absolute paths when writing to config files or passing paths to tools — use `$HOME` or the resolved path
+Core code and tooling rules are in the shared core. Claude-only additions:
+
+- Prefer running single tests, not the whole suite, for performance.
+- If a `package-lock.json` exists, ask whether to run `pnpm import` and delete it.
 
 # Shell Command Style
 
@@ -80,7 +78,3 @@ Validation runs in layers — rely on them rather than running checks manually:
 3. **`Stop` → `stop-typecheck.sh`:** project-wide `tsc --noEmit` runs once at end of turn; failures block completion until types are clean. Don't end a turn expecting type errors to slide.
 
 All hooks no-op for projects/file types they don't apply to. Don't run formatters/linters/type-checkers manually — the hooks handle them.
-
-# Spelling
-
-Use British English (`colour`, `behaviour`, `organisation`) in documentation, comments, and conversations with me.

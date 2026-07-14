@@ -45,8 +45,10 @@ if [ "$CLAUDE_BACKUP_NEEDED" = true ]; then
 fi
 
 # Link top-level markdown files manually (stow ignores the claude dir via .stowrc and can't override per-file)
-# CLAUDE.md is the global instructions file.
-for md_file in CLAUDE.md; do
+# CLAUDE.md is the Claude-specific global instructions file.
+# global-core.md is the shared cross-tool working agreement (imported by CLAUDE.md and
+# referenced by Kiro's AGENTS.md steering file — see below).
+for md_file in CLAUDE.md global-core.md; do
   if [ -e "$HOME/.claude/$md_file" ]; then
     log "Removing existing $md_file before linking (original backed up to ~/.config/backups/)"
     rm -f "$HOME/.claude/$md_file"
@@ -54,6 +56,25 @@ for md_file in CLAUDE.md; do
   log "Linking $md_file to ~/.claude/..."
   ln -sf "$CLAUDE_DIR/$md_file" "$HOME/.claude/$md_file"
 done
+
+# Link the shared working agreement into Kiro global steering.
+# Kiro loads every .md in ~/.kiro/steering, so global-core.md is picked up directly.
+# (Kiro won't follow #[[file:]] references outside the current project, so we can't use
+# a wrapper that points at the shared core — the file itself must live in steering.)
+KIRO_STEERING="$HOME/.kiro/steering"
+if [ -d "$KIRO_STEERING" ]; then
+  # Remove legacy steering files now superseded by the shared core.
+  for legacy in global-tech-preferences.md AGENTS.md; do
+    if [ -e "$KIRO_STEERING/$legacy" ]; then
+      log "Removing legacy Kiro steering file $legacy (superseded by shared core)"
+      rm -f "$KIRO_STEERING/$legacy"
+    fi
+  done
+  log "Linking global-core.md to $KIRO_STEERING/global-core.md..."
+  ln -sf "$CLAUDE_DIR/global-core.md" "$KIRO_STEERING/global-core.md"
+else
+  warn "$KIRO_STEERING not found — skipping Kiro steering link"
+fi
 
 # Link DesktopNotification.app (used by Claude Code notification hook)
 if [ -e "$HOME/.claude/DesktopNotification.app" ]; then
