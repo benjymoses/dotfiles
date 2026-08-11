@@ -3,7 +3,7 @@ This repo helps to bootstrap the shell, terminal, prompt, and assorted plugins w
 
 ## Instructions for use
 
-1. Clone this repo to the home folder of a macOS machine.
+1. Clone this repo to the home folder of a macOS or Linux machine.
 2. `./dotfiles/bootstrap.sh`
 
 This will install Wezterm, Homebrew, and all necessary packages and configs. More info on each below.
@@ -14,7 +14,8 @@ This will install Wezterm, Homebrew, and all necessary packages and configs. Mor
 ## Configs
 
 **Starship** - Custom prompt with Catppuccin theme, Git integration, and language-specific modules  
-**Tmux** - Terminal multiplexer with custom prefix (Ctrl+A), intuitive split bindings, and plugin support  
+**Herdr** - Terminal workspace manager for AI coding agents, with plugins and a tmux-style prefix (Ctrl+A)  
+**Worktrunk** - Git worktree manager with lifecycle hooks, for running agents in parallel  
 **Neovim** - Modern Vim setup with Lazy plugin manager, LSP, Telescope, Treesitter, and Catppuccin theme  
 **Zsh + Oh My Zsh** - Enhanced shell with Git plugin, custom functions, and Homebrew integration  
 **WezTerm** - GPU-accelerated terminal with Lua configuration  
@@ -33,7 +34,8 @@ This will install Wezterm, Homebrew, and all necessary packages and configs. Mor
 
 **Development**  
 - Neovim - Text editor  
-- Tmux - Terminal multiplexer  
+- Herdr - Terminal workspace manager for AI agents  
+- Worktrunk - Git worktree manager  
 - UV - Python package installer  
 - Luarocks - Lua package manager  
 

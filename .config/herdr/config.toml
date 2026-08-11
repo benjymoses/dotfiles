@@ -1,0 +1,125 @@
+onboarding = false
+# herdr config — see `herdr --default-config` for every option.
+# Keybindings port Ben's tmux muscle memory (prefix ctrl+a, | and - splits,
+# r reload, m zoom) and add ctrl+alt direct chords for splits and pane focus.
+# Validate changes with `herdr config check`, apply with `herdr server reload-config`.
+
+[terminal]
+# New panes/tabs inherit the source pane's cwd. This is the default; set
+# explicitly to match tmux's -c "#{pane_current_path}".
+new_cwd = "follow"
+
+[keys]
+prefix = "ctrl+a"
+
+# Splits. "prefix+|" and "prefix+minus" mirror the tmux bindings.
+# ctrl+alt is the one modifier family that terminals leave free.
+split_vertical   = ["prefix+v", "prefix+|", "ctrl+alt+d"]
+split_horizontal = ["prefix+minus", "ctrl+alt+shift+d"]
+
+# Pane focus. NOTE: in tmux prefix+hjkl resized; in herdr it moves focus.
+focus_pane_left  = ["prefix+h", "ctrl+alt+h"]
+focus_pane_down  = ["prefix+j", "ctrl+alt+j"]
+focus_pane_up    = ["prefix+k", "ctrl+alt+k"]
+focus_pane_right = ["prefix+l", "ctrl+alt+l"]
+
+detach        = ["prefix+q", "prefix+d"]              # tmux detach is prefix+d
+reload_config = "ctrl+alt+r"                           # prefix+shift+r is swallowed by prefix+r
+resize_mode   = "prefix+r"                            # frequent: then hjkl, Esc to exit
+zoom          = ["prefix+z", "prefix+m"]              # tmux m
+rename_tab    = "prefix+comma"                        # tmux prefix+, (prefix+shift+t
+                                                      # left free for herdr-insight)
+# The command palette takes prefix+p, which is herdr's default previous_tab,
+# so tab navigation moves to ctrl+alt chords to survive.
+previous_tab  = "ctrl+alt+["
+next_tab      = ["prefix+n", "ctrl+alt+]"]
+close_tab     = ["prefix+shift+x", "prefix+ampersand"] # tmux prefix+&
+
+# Mirror adds a workspace per remote host, so indexed workspace jumps help.
+switch_workspace = "prefix+shift+1..9"
+
+[ui]
+show_agent_labels_on_pane_borders = true
+agent_panel_sort = "priority"
+
+[ui.toast]
+delivery = "herdr"
+
+[experimental]
+# Restore recent pane output across a full server restart, like tmux-resurrect's
+# @resurrect-capture-pane-contents. Writes pane output to disk, so treat the
+# herdr config directory like shell history.
+pane_history = true
+
+# vim-herdr-navigation: ctrl+hjkl moves between nvim splits and herdr panes.
+# navigate.sh inspects the focused pane's foreground process and either forwards
+# the key into Vim or moves herdr focus. Shadows readline ctrl+l/ctrl+k in
+# non-Vim panes, the same trade-off as vim-tmux-navigator.
+[[keys.command]]
+key = "ctrl+h"
+type = "plugin_action"
+command = "vim-herdr-navigation.left"
+description = "navigate left (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "plugin_action"
+command = "vim-herdr-navigation.down"
+description = "navigate down (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "plugin_action"
+command = "vim-herdr-navigation.up"
+description = "navigate up (vim/herdr)"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "plugin_action"
+command = "vim-herdr-navigation.right"
+description = "navigate right (vim/herdr)"
+
+[[keys.command]]
+key = "prefix+p"
+type = "plugin_action"
+command = "jt.command-palette.open"
+description = "Command palette"
+
+[[keys.command]]
+key = "prefix+o"
+type = "plugin_action"
+command = "herdr-zoxide.browse"
+description = "Browse zoxide directories"
+
+# Horizontal split (bottom)
+[[keys.command]]
+key = "prefix+t"
+type = "plugin_action"
+command = "herdr-insight.open-timeline-down"
+
+# Vertical split (right)
+[[keys.command]]
+key = "prefix+shift+t"
+type = "plugin_action"
+command = "herdr-insight.open-timeline-right"
+
+# Override herdr's built-in "new worktree" key (prefix+shift+g) with worktrunk's
+# default-branch switch/create picker:
+[[keys.command]]
+key = "prefix+shift+g"
+type = "plugin_action"
+command = "worktrunk.open"
+description = "Worktree: switch / create from default branch"
+
+# Optional: bind current-branch creation separately.
+[[keys.command]]
+key = "prefix+shift+c"
+type = "plugin_action"
+command = "worktrunk.open-current"
+description = "Worktree: switch / create from current branch"
+
+[[keys.command]]
+key = "prefix+shift+d"
+type = "plugin_action"
+command = "worktrunk.remove"
+description = "Worktree: remove"

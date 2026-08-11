@@ -5,4 +5,5 @@
 --ignore=\.DS_Store
 --ignore=\.githooks
 --ignore=bootstrap.sh
---ignore=claude
+--ignore=agent-config
+--ignore=scripts

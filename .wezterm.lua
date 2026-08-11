@@ -48,6 +48,8 @@ config.color_scheme = "Catppuccin Mocha"
 
 config.native_macos_fullscreen_mode = true
 
-config.default_prog = { "/opt/homebrew/bin/tmux", "new-session", "-A", "-s", "main" }
+-- No default_prog: herdr is launched manually and is the only multiplexer.
+-- Its mirror plugin surfaces remote herdr workspaces in the local sidebar, so a
+-- second window or tab is not needed to reach them.
 
 return config

@@ -37,6 +37,9 @@ function mkkiro() {
 # Node & Python (managed by mise)
 (( $+commands[mise] )) && eval "$(mise activate zsh)"
 
+# Worktrunk: shell wrapper so `wt switch` can change the shell's directory
+(( $+commands[wt] )) && eval "$(wt config shell init zsh)"
+
 # History setup
 HISTFILE=$HOME/.zhistory
 SAVEHIST=50000

@@ -103,6 +103,23 @@ for hook_file in "$CLAUDE_DIR/hooks/"*.sh; do
   ln -sf "$hook_file" "$HOME/.claude/hooks/$local_name"
 done
 
+# Link agent persona definitions into ~/.claude/agents/
+# Unlike hooks, an existing NON-symlink target is left alone: that directory also
+# holds locally-managed agents which are not tracked in this repo.
+if [ -d "$CLAUDE_DIR/agents" ]; then
+  mkdir -p "$HOME/.claude/agents"
+  for agent_file in "$CLAUDE_DIR/agents/"*.md; do
+    [ -e "$agent_file" ] || continue
+    local_name=$(basename "$agent_file")
+    if [ -e "$HOME/.claude/agents/$local_name" ] && [ ! -L "$HOME/.claude/agents/$local_name" ]; then
+      warn "~/.claude/agents/$local_name exists and is not a symlink — skipping"
+      continue
+    fi
+    log "Linking agent '$local_name' to ~/.claude/agents/..."
+    ln -sf "$agent_file" "$HOME/.claude/agents/$local_name"
+  done
+fi
+
 # Link dotfiles-managed skills into ~/.claude/skills/
 mkdir -p "$HOME/.claude/skills"
 for skill_dir in "$CLAUDE_DIR/skills/"*/; do
@@ -150,8 +167,33 @@ if [ -f "$CLAUDE_FRAGMENT" ]; then
     log "No existing Claude settings found. Installing fragment as ~/.claude/settings.json"
     cp "$CLAUDE_FRAGMENT" "$CLAUDE_REAL"
   else
-    # Merge: fragment keys override real settings
-    MERGED=$(jq -s '.[0] * .[1]' "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" 2>/dev/null)
+    # Merge program, used for both the preview and the apply so they cannot drift.
+    #
+    # jq's `*` merges objects recursively but REPLACES arrays outright. That is
+    # wrong here: ~/.claude/settings.json accumulates machine-local entries that
+    # are deliberately not in this repo, and a plain merge silently drops them.
+    # Measured against the real files, `*` would have discarded 157 entries,
+    # including 123 permissions.deny rules (the ~/.midway credential guards).
+    #
+    # So this merge is additive for arrays of STRINGS: real first, then any
+    # fragment entries not already present, order preserved and deduped.
+    # Arrays containing anything else (hook definitions) keep replace semantics,
+    # because unioning those would register duplicate hooks. Objects merge
+    # recursively and scalars are overridden by the fragment, both as before.
+    MERGE_PROGRAM='
+      def dedupe: reduce .[] as $x ([]; if index($x) then . else . + [$x] end);
+      def allstrings: (length == 0) or all(type == "string");
+      def dmerge($a; $b):
+        if   ($a|type) == "object" and ($b|type) == "object" then
+          reduce ($b|keys_unsorted[]) as $k ($a;
+            .[$k] = (if ($a|has($k)) then dmerge($a[$k]; $b[$k]) else $b[$k] end))
+        elif ($a|type) == "array" and ($b|type) == "array"
+             and ($a|allstrings) and ($b|allstrings) then
+          ($a + $b) | dedupe
+        else $b end;
+      dmerge(.[0]; .[1])
+    '
+    MERGED=$(jq -s "$MERGE_PROGRAM" "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" 2>/dev/null)
 
     if [ $? -ne 0 ]; then
       warn "Failed to merge Claude settings (invalid JSON?) — skipping"
@@ -171,7 +213,7 @@ if [ -f "$CLAUDE_FRAGMENT" ]; then
         echo
 
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-          jq -s '.[0] * .[1]' "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" > "${CLAUDE_REAL}.tmp" && mv "${CLAUDE_REAL}.tmp" "$CLAUDE_REAL"
+          jq -s "$MERGE_PROGRAM" "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" > "${CLAUDE_REAL}.tmp" && mv "${CLAUDE_REAL}.tmp" "$CLAUDE_REAL"
           log "Claude settings updated"
         else
           log "Skipped Claude settings merge"

@@ -187,11 +187,11 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "/Users/benmoses/.claude/hooks/sleep-guard.sh"
+						"command": "\"$HOME/.claude/hooks/sleep-guard.sh\""
 					},
 					{
 						"type": "command",
-						"command": "/Users/benmoses/.claude/hooks/main-guard.sh"
+						"command": "\"$HOME/.claude/hooks/main-guard.sh\""
 					}
 				]
 			}
@@ -202,7 +202,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "/Users/benmoses/.claude/hooks/biome.sh"
+						"command": "\"$HOME/.claude/hooks/biome.sh\""
 					}
 				]
 			}
@@ -212,7 +212,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "/Users/benmoses/.claude/hooks/stop-typecheck.sh"
+						"command": "\"$HOME/.claude/hooks/stop-typecheck.sh\""
 					}
 				]
 			}
@@ -223,6 +223,16 @@
 					{
 						"type": "command",
 						"command": "cat .claude/CONTEXT.md 2>/dev/null || true"
+					}
+				]
+			},
+			{
+				"matcher": "*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
+						"timeout": 10
 					}
 				]
 			}
@@ -237,7 +247,12 @@
 		"enabled": true,
 		"autoAllowBashIfSandboxed": true,
 		"allowUnsandboxedCommands": true,
-		"excludedCommands": ["git push", "git branch", "git remote", "git config"],
+		"excludedCommands": [
+			"git push",
+			"git branch",
+			"git remote",
+			"git config"
+		],
 		"network": {
 			"allowedDomains": [
 				"registry.npmjs.org",
@@ -249,7 +264,6 @@
 				"raw.githubusercontent.com",
 				"pypi.org",
 				"files.pythonhosted.org",
-				"cli.cdk.dev-tools.aws.dev",
 				"biomejs.dev",
 				"pnpm.io",
 				"amazonaws.com",
@@ -303,6 +317,6 @@
 	"skipWorkflowUsageWarning": true,
 	"autoUpdatesChannel": "stable",
 	"theme": "dark-ansi",
-	"teammateMode": "tmux",
+	"teammateMode": "auto",
 	"autoDreamEnabled": true
 }

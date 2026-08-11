@@ -1,0 +1,49 @@
+# worktrunk user config — applies to EVERY repository.
+#
+# Full annotated reference: run `wt config create` (regenerates an ~18KB
+# documented template) or see https://worktrunk.dev/config/
+#
+# Hooks defined at the top level here are USER hooks and run for all projects.
+# Per-repo overrides go in <repo>/.config/wt.toml, or under a
+# [projects."<host>/<owner>/<repo>"] table in this file.
+
+# ── Worktree setup ────────────────────────────────────────────────────────────
+# Sequential pipeline (array-of-tables = run in order):
+#   1. copy gitignored files (.env and friends) from the source worktree
+#   2. install dependencies
+#
+# pre-start is BLOCKING, so a new worktree is fully ready before
+# `wt switch -c -x <agent>` launches an agent inside it. That is deliberate:
+# an agent starting in a tree with no .env and no node_modules wastes a turn
+# rediscovering that. The cost is that `wt switch` waits for the install.
+# To trade correctness for speed, rename these to [[post-start]] (background).
+
+[[pre-start]]
+copy-ignored = "wt step copy-ignored"
+
+[[pre-start]]
+# Skip entirely for non-Node repos, then honour the lockfile.
+# Falls back to pnpm, which is the default package manager here.
+deps = "bash -c 'if [ -f package.json ]; then if [ -f pnpm-lock.yaml ]; then pnpm install; elif [ -f yarn.lock ]; then yarn install; elif [ -f package-lock.json ]; then npm ci; else pnpm install; fi; fi'"
+
+# ── copy-ignored excludes ─────────────────────────────────────────────────────
+# copy-ignored copies *gitignored* files, which would otherwise include heavy
+# build and dependency directories. worktrunk has built-in excludes for VCS and
+# tool-state dirs; these are belt-and-braces for the expensive ones, and matter
+# because the deps hook above reinstalls them anyway.
+
+[step.copy-ignored]
+exclude = [
+  "node_modules/",
+  ".venv/",
+  "venv/",
+  "target/",
+  "dist/",
+  "build/",
+  ".next/",
+  ".turbo/",
+  ".cache/",
+  ".pytest_cache/",
+  "__pycache__/",
+  ".cdk.out"
+]

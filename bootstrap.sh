@@ -1,31 +1,24 @@
 #!/bin/bash
+#
+# Bootstrap this machine.
+#
+# This script only handles preparation: confirming with you, backing up whatever
+# it is about to replace, and then calling the stages in order. The actual work
+# lives in scripts/, so each stage can be re-run on its own:
+#
+#   scripts/packages.sh   Homebrew + packages          (slow, network)
+#   scripts/link.sh       stow + agent config          (fast, idempotent)
+#   scripts/plugins.sh    mise tools + herdr plugins   (needs config in place)
+#
+# Order matters: packages installs the binaries link needs, and link puts the
+# config files plugins reads.
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/scripts/lib.sh"
 
-log() {
-  echo -e "${GREEN}[INFO]${NC} $1"
-}
-
-warn() {
-  echo -e "${YELLOW}[WARN]${NC} $1"
-}
-
-error() {
-  echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Check if command exists
-command_exists() {
-  command -v "$1" >/dev/null 2>&1
-}
-
-# Pre-flight checks and user confirmation
+# ── Pre-flight ────────────────────────────────────────────────────────────────
 preflight_check() {
   echo -e "${GREEN}Bootstrap Script - Pre-flight Check${NC}"
   echo "=================================="
@@ -34,27 +27,28 @@ preflight_check() {
   echo "• Install Homebrew (if not present)"
   echo "• Install development packages via Homebrew"
   echo "• Configure dotfiles using GNU stow"
-  echo "• Set up TMUX plugin manager"
+  echo "• Install agent config for Claude Code and Kiro"
+  echo "• Install mise tool versions and herdr plugins"
   echo ""
 
-  # Check for existing configs that would be overwritten
   local conflicts=()
 
-  # Check dotfiles in root
-  for file in "$HOME/dotfiles"/.*; do
+  # Root-level dotfiles
+  for file in "$DOTFILES_DIR"/.*; do
     [ -f "$file" ] || continue
-    local basename=$(basename "$file")
+    local basename
+    basename=$(basename "$file")
     [ "$basename" = "." ] || [ "$basename" = ".." ] && continue
     [ -e "$HOME/$basename" ] && conflicts+=("$basename")
   done
 
-  # Check .config subdirectories
-  if [ -d "$HOME/dotfiles/.config" ]; then
+  # .config files
+  if [ -d "$DOTFILES_DIR/.config" ]; then
     while IFS= read -r -d '' file; do
-      local rel_path="${file#$HOME/dotfiles/.config/}"
+      local rel_path="${file#$DOTFILES_DIR/.config/}"
       local target="$HOME/.config/$rel_path"
       [ -e "$target" ] && conflicts+=("~/.config/$rel_path")
-    done < <(find "$HOME/dotfiles/.config" -type f -print0)
+    done < <(find "$DOTFILES_DIR/.config" -type f -print0)
   fi
 
   if [ ${#conflicts[@]} -gt 0 ]; then
@@ -66,7 +60,7 @@ preflight_check() {
   echo -e "${YELLOW}Warning:${NC} If existing configs exist, they'll be backed up to:"
   echo "  ~/.config/backups/$(date -u +%Y-%m-%d-%H%M%S)/"
   echo ""
-  echo "NVIM and TMUX plugins will be purged (you can re-install them afterwards)"
+  echo "NVIM plugins will be purged (you can re-install them afterwards)"
   echo ""
 
   read -p "Do you want to proceed? (y/N): " -n 1 -r
@@ -78,16 +72,15 @@ preflight_check() {
   fi
 }
 
-# Backup existing configs
+# ── Backup ────────────────────────────────────────────────────────────────────
 backup_configs() {
   local backup_dir="$HOME/.config/backups/$(date -u +%Y-%m-%d-%H%M%S)"
   local needs_backup=false
 
-  # Create backup directory structure
   mkdir -p "$backup_dir"
 
-  # Backup dotfiles in root
-  cd "$HOME/dotfiles"
+  # Root-level dotfiles
+  cd "$DOTFILES_DIR"
   for file in .*; do
     [ "$file" = "." ] || [ "$file" = ".." ] && continue
     [ -f "$file" ] || continue
@@ -101,10 +94,10 @@ backup_configs() {
     fi
   done
 
-  # Backup .config files
-  if [ -d "$HOME/dotfiles/.config" ]; then
+  # .config files
+  if [ -d "$DOTFILES_DIR/.config" ]; then
     while IFS= read -r -d '' file; do
-      local rel_path="${file#$HOME/dotfiles/.config/}"
+      local rel_path="${file#$DOTFILES_DIR/.config/}"
       local target="$HOME/.config/$rel_path"
       if [ -e "$target" ]; then
         log "Backing up ~/.config/$rel_path"
@@ -113,28 +106,36 @@ backup_configs() {
         rm -rf "$target"
         needs_backup=true
       fi
-    done < <(find "$HOME/dotfiles/.config" -type f -print0)
+    done < <(find "$DOTFILES_DIR/.config" -type f -print0)
   fi
 
-  # Backup ~/.zprofile
   if [ -e "$HOME/.zprofile" ]; then
     log "Backing up ~/.zprofile"
     cp "$HOME/.zprofile" "$backup_dir/"
     needs_backup=true
   fi
 
-  # Backup Claude Code config
-  for claude_file in "$HOME/.claude/settings.json" "$HOME/.claude/CLAUDE.md" "$HOME/.claude/statusline-command.sh" "$HOME/.claude/hooks/biome.sh" "$HOME/.claude/hooks/ts-typecheck.sh"; do
-    if [ -e "$claude_file" ]; then
-      log "Backing up $claude_file"
-      mkdir -p "$backup_dir/.claude"
-      cp "$claude_file" "$backup_dir/.claude/"
+  # Agent config that the installer will replace
+  for agent_file in \
+    "$HOME/.claude/settings.json" \
+    "$HOME/.claude/CLAUDE.md" \
+    "$HOME/.claude/global-core.md" \
+    "$HOME/.claude/statusline-command.sh" \
+    "$HOME/.claude/hooks/biome.sh" \
+    "$HOME/.claude/hooks/stop-typecheck.sh"; do
+    if [ -e "$agent_file" ]; then
+      log "Backing up ${agent_file/#$HOME/~}"
+      mkdir -p "$backup_dir/.claude/hooks"
+      cp "$agent_file" "$backup_dir/.claude/$(basename "$agent_file")"
       needs_backup=true
     fi
   done
 
-  # Backup NVIM local data, state, and cache
-  for nvim_pair in "$HOME/.local/share/nvim:nvim_local_share" "$HOME/.local/state/nvim:nvim_local_state" "$HOME/.cache/nvim:nvim_cache"; do
+  # NVIM local data, state, and cache
+  for nvim_pair in \
+    "$HOME/.local/share/nvim:nvim_local_share" \
+    "$HOME/.local/state/nvim:nvim_local_state" \
+    "$HOME/.cache/nvim:nvim_cache"; do
     local src="${nvim_pair%%:*}"
     local dest_name="${nvim_pair##*:}"
     if [ -d "$src" ]; then
@@ -146,7 +147,7 @@ backup_configs() {
   done
 
   # Clean plugin directories
-  for plugin_dir in "$HOME/.config/nvim/plugins" "$HOME/.config/tmux/plugins"; do
+  for plugin_dir in "$HOME/.config/nvim/plugins"; do
     if [ -d "$plugin_dir" ]; then
       log "Cleaning $plugin_dir"
       rm -rf "$plugin_dir"/*
@@ -161,84 +162,15 @@ backup_configs() {
   fi
 }
 
-# Configure git hooks path for this repo
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-git -C "$SCRIPT_DIR" config core.hooksPath .githooks
+# ── Run ───────────────────────────────────────────────────────────────────────
+git -C "$DOTFILES_DIR" config core.hooksPath .githooks
 
-# Run pre-flight checks
 preflight_check
-
-# Backup existing configurations
 backup_configs
 
-# Install Homebrew
-if ! command_exists brew; then
-  log "Installing Homebrew..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>~/.zprofile
-else
-  log "Homebrew already installed"
-fi
-
-# Ensure ~/.zprofile has brew shellenv (covers case where Homebrew exists but zprofile was deleted)
-if ! grep -q 'brew shellenv' ~/.zprofile 2>/dev/null; then
-  log "Restoring brew shellenv to ~/.zprofile..."
-  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>~/.zprofile
-fi
-
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# Install Homebrew packages
-log "Installing Homebrew packages..."
-packages=(
-  "starship"
-  "neovim"
-  "ripgrep"
-  "tmux"
-  "eza"
-  "zoxide"
-  "fzf"
-  "bat"
-  "luarocks"
-  "wget"
-  "fd"
-  "jq"
-  "stow"
-  "uv"
-  "mise"
-  "rtk"
-  "wezterm"
-  "terminal-notifier"
-  "zsh-autosuggestions"
-  "zsh-syntax-highlighting"
-  "font-fira-code-nerd-font"
-  "font-meslo-lg-nerd-font"
-)
-
-for package in "${packages[@]}"; do
-  if brew list "$package" &>/dev/null; then
-    log "$package already installed"
-  else
-    log "Installing $package..."
-    brew install "$package"
-  fi
-done
-
-# Run stow from dotfiles directory
-log "Configuring dotfiles with stow..."
-cd "$HOME/dotfiles"
-stow .
-
-# Clone TPM for TMUX (only if not already exists)
-if [ ! -d "$HOME/.config/tmux/plugins/tpm" ]; then
-  log "Installing TMUX Plugin Manager..."
-  git clone https://github.com/tmux-plugins/tpm ~/.config/tmux/plugins/tpm
-else
-  log "TMUX Plugin Manager already installed"
-fi
-
-# ── Claude Code setup ──────────────────────────────────────────────
-source "$HOME/dotfiles/claude/claude.sh"
+bash "$SCRIPT_DIR/scripts/packages.sh"
+bash "$SCRIPT_DIR/scripts/link.sh"
+bash "$SCRIPT_DIR/scripts/plugins.sh"
 
 log "Bootstrap complete!"
 echo ""

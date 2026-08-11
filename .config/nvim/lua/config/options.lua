@@ -10,26 +10,21 @@ vim.g.lazyvim_prettier_needs_config = true --ensures Biome takes priority
 
 vim.opt.wrap = true
 
--- Clipboard over SSH (cloud desktop): mirror yanks to the Mac's clipboard via OSC 52.
--- The cloud desktop runs nvim inside TWO nested tmux layers (cloud inner tmux, reached
--- over ssh from the laptop's outer tmux) before WezTerm. tmux won't forward plain OSC 52
--- through this chain, so we DOUBLE-WRAP it in tmux passthrough: the inner tmux strips one
--- wrapper, the outer tmux strips the second, and WezTerm receives the OSC 52. Emitted via
--- nvim_ui_send (nvim's core has no tty of its own; this routes through the nvim-tui
--- process to the real pty). `clipboard` is left as LazyVim's SSH default ("") so local
--- registers and buffer-to-buffer paste are untouched. On the laptop (not SSH) this whole
--- block is skipped, so unnamedplus + pbcopy is unchanged.
--- NOTE: assumes exactly 2 nested tmux layers (the standard cloud-desktop setup).
+-- Clipboard over SSH: mirror yanks to the local machine's clipboard via OSC 52.
+-- When editing on a remote host over SSH, `pbcopy` is not reachable, so yanks are
+-- echoed as an OSC 52 sequence for the outer terminal to pick up. Emitted via
+-- nvim_ui_send because nvim's core has no tty of its own; this routes through the
+-- nvim-tui process to the real pty. `clipboard` is left as LazyVim's SSH default
+-- ("") so local registers and buffer-to-buffer paste are untouched. Outside SSH the
+-- whole block is skipped, leaving unnamedplus + pbcopy unchanged.
+--
+-- This previously double-wrapped the sequence in tmux passthrough to punch through
+-- nested tmux layers. tmux is no longer used, so the sequence is emitted plain and
+-- the terminal (or any multiplexer in between) is expected to forward it.
 if vim.env.SSH_CONNECTION then
   local function osc52_copy(lines)
     local esc, bel = "\27", "\7"
     local seq = esc .. "]52;c;" .. vim.base64.encode(table.concat(lines, "\n")) .. bel
-    if vim.env.TMUX then
-      local osc_d = seq:gsub(esc, esc .. esc) -- wrap for the OUTER tmux
-      local l1 = esc .. "Ptmux;" .. osc_d .. esc .. "\\"
-      local l1_d = l1:gsub(esc, esc .. esc) -- wrap again for the INNER tmux
-      seq = esc .. "Ptmux;" .. l1_d .. esc .. "\\"
-    end
     vim.api.nvim_ui_send(seq)
   end
   vim.api.nvim_create_autocmd("TextYankPost", {
