@@ -31,3 +31,11 @@ esac
 
 # Machine-local PATH / env (real file in $HOME, never in dotfiles)
 [[ -f ~/.zprofile-local ]] && source ~/.zprofile-local
+
+ # Tell WezTerm this pane is remote, so it can colour the tab.
+ # Emitted before herdr starts, so it reaches WezTerm directly. The HERDR_ENV
+ # guard matters: without it every herdr pane would emit it too, and those
+ # emissions get swallowed exactly as OSC 52 does, so they would be pure noise.
+ if [[ -n "$SSH_CONNECTION" && -z "$HERDR_ENV" ]]; then
+   printf '\033]1337;SetUserVar=%s=%s\007' host "$(echo -n "${HOST:-remote}" | base64)"
+ fi
