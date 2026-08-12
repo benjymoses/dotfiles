@@ -9,17 +9,18 @@
 set -e
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-# ── Language toolchains ───────────────────────────────────────────────────────
+# -- Language toolchains -------------------------------------------------------
 # Versions come from .config/mise/config.toml (node, python, rust, bun).
 if command_exists mise; then
   log "Installing mise-managed tool versions..."
-  mise trust
+  mise trust "$HOME/dotfiles/.config/mise/config.toml"
+  mise trust "$HOME/.config/mise/config.toml"
   mise install
 else
   warn "mise not found — skipping tool versions"
 fi
 
-# ── herdr plugins ─────────────────────────────────────────────────────────────
+# -- herdr plugins -------------------------------------------------------------
 # Installed from GitHub by <owner>/<repo>. herdr records the resolved commit, so
 # re-running is a no-op for anything already present.
 #

@@ -18,6 +18,7 @@ warn() {
 
 # Resolve the directory this script lives in
 CLAUDE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AGENT_CONFIG_DIR="$(cd "$CLAUDE_DIR/.." && pwd)"
 DOTFILES_DIR="$(dirname "$CLAUDE_DIR")"
 
 CLAUDE_FRAGMENT="$CLAUDE_DIR/settings-fragment.json"
@@ -122,7 +123,7 @@ fi
 
 # Link dotfiles-managed skills into ~/.claude/skills/
 mkdir -p "$HOME/.claude/skills"
-for skill_dir in "$CLAUDE_DIR/skills/"*/; do
+for skill_dir in "$AGENT_CONFIG_DIR/skills/"*/; do
   [ -d "$skill_dir" ] || continue
   skill_name=$(basename "$skill_dir")
   if [ -e "$HOME/.claude/skills/$skill_name" ] && [ ! -L "$HOME/.claude/skills/$skill_name" ]; then
@@ -160,12 +161,26 @@ for ignore_entry in "**/.claude/settings.local.json" ".claude/worktrees/"; do
   fi
 done
 
+
+
 # Merge Claude settings fragment into real settings
 if [ -f "$CLAUDE_FRAGMENT" ]; then
+  # A literal "~" or "$HOME" is NOT written into the JSON: Claude Code is not
+   # documented to expand either inside statusLine.command.
+   CLAUDE_FRAGMENT_RESOLVED="$(mktemp "${TMPDIR:-/tmp}/claude-fragment.XXXXXX")"
+   if ! jq --arg home "$HOME" '
+         if has("statusLine")
+         then .statusLine.command = $home + "/.claude/statusline-command.sh"
+         else . end
+       ' "$CLAUDE_FRAGMENT" > "$CLAUDE_FRAGMENT_RESOLVED"; then
+     warn "Could not normalise statusLine path - using the fragment as-is"
+     cp "$CLAUDE_FRAGMENT" "$CLAUDE_FRAGMENT_RESOLVED"
+   fi
+
   if [ ! -f "$CLAUDE_REAL" ]; then
     # No existing settings — just copy the fragment
     log "No existing Claude settings found. Installing fragment as ~/.claude/settings.json"
-    cp "$CLAUDE_FRAGMENT" "$CLAUDE_REAL"
+    cp "$CLAUDE_FRAGMENT_RESOLVED" "$CLAUDE_REAL"
   else
     # Merge program, used for both the preview and the apply so they cannot drift.
     #
@@ -193,7 +208,7 @@ if [ -f "$CLAUDE_FRAGMENT" ]; then
         else $b end;
       dmerge(.[0]; .[1])
     '
-    MERGED=$(jq -s "$MERGE_PROGRAM" "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" 2>/dev/null)
+    MERGED=$(jq -s "$MERGE_PROGRAM" "$CLAUDE_REAL" "$CLAUDE_FRAGMENT_RESOLVED" 2>/dev/null)
 
     if [ $? -ne 0 ]; then
       warn "Failed to merge Claude settings (invalid JSON?) — skipping"
@@ -213,7 +228,7 @@ if [ -f "$CLAUDE_FRAGMENT" ]; then
         echo
 
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-          jq -s "$MERGE_PROGRAM" "$CLAUDE_REAL" "$CLAUDE_FRAGMENT" > "${CLAUDE_REAL}.tmp" && mv "${CLAUDE_REAL}.tmp" "$CLAUDE_REAL"
+          jq -s "$MERGE_PROGRAM" "$CLAUDE_REAL" "$CLAUDE_FRAGMENT_RESOLVED" > "${CLAUDE_REAL}.tmp" && mv "${CLAUDE_REAL}.tmp" "$CLAUDE_REAL"
           log "Claude settings updated"
         else
           log "Skipped Claude settings merge"
@@ -221,6 +236,7 @@ if [ -f "$CLAUDE_FRAGMENT" ]; then
       fi
     fi
   fi
+  rm -f "$CLAUDE_FRAGMENT_RESOLVED"
 else
   log "No settings-fragment.json found — skipping Claude settings merge"
 fi

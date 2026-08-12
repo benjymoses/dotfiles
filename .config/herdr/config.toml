@@ -24,6 +24,7 @@ focus_pane_down  = ["prefix+j", "ctrl+alt+j"]
 focus_pane_up    = ["prefix+k", "ctrl+alt+k"]
 focus_pane_right = ["prefix+l", "ctrl+alt+l"]
 
+copy_mode     = "prefix+["
 detach        = ["prefix+q", "prefix+d"]              # tmux detach is prefix+d
 reload_config = "ctrl+alt+r"                           # prefix+shift+r is swallowed by prefix+r
 resize_mode   = "prefix+r"                            # frequent: then hjkl, Esc to exit

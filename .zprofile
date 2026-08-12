@@ -17,6 +17,11 @@ export HOMEBREW_NO_ENV_HINTS=1
 # User-local bins
 export PATH="$HOME/.local/bin:$PATH"
 
+# Mise Shims for Path
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate zsh --shims)"
+fi
+
 # pnpm
 export PNPM_HOME="$HOME/Library/pnpm"
 case ":$PATH:" in
