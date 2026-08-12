@@ -13,6 +13,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # Versions come from .config/mise/config.toml (node, python, rust, bun).
 if command_exists mise; then
   log "Installing mise-managed tool versions..."
+  mise trust
   mise install
 else
   warn "mise not found — skipping tool versions"
