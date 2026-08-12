@@ -2,8 +2,8 @@
 # Runs after macOS /etc/zprofile (path_helper), so PATH set here is not reordered.
 
 # Homebrew. Prefix differs by platform (Apple Silicon, Intel macOS, Linux),
-# so probe rahter than hardcode. `brew shellenv` exports HOMEBREW_PREFIX, 
-# which .zshrc hen uses to find completions and plugins.
+# so probe rather than hardcode. `brew shellenv` exports HOMEBREW_PREFIX, 
+# which .zshrc then uses to find completions and plugins.
 
 for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
   if [[ -x "$_brew" ]]; then

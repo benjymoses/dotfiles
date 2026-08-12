@@ -15,16 +15,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 if ! command_exists brew; then
   log "Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>~/.zprofile
 else
   log "Homebrew already installed"
 fi
 
-# Covers the case where Homebrew exists but ~/.zprofile was replaced
-if ! grep -q 'brew shellenv' ~/.zprofile 2>/dev/null; then
-  log "Restoring brew shellenv to ~/.zprofile..."
-  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>~/.zprofile
-fi
+# Probe for Brew to get shellenv
+for candidate in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
+  [ -x "$candidate/bin/brew" ] && BREW="$candidate/bin/brew" && break
+done
+[ -n "$BREW" ] || { error "brew not found after install"; exit 1; }
+
+eval "$("$BREW" shellenv)"
 
 eval "$(/opt/homebrew/bin/brew shellenv)"
 
@@ -49,20 +50,26 @@ packages=(
   "stow"
   "uv"
   "mise"
-  "wezterm"
-  "terminal-notifier"
   "zsh-autosuggestions"
   "zsh-syntax-highlighting"
   "font-fira-code-nerd-font"
   "font-meslo-lg-nerd-font"
 )
 
+# macOS-only: a GUI terminal, and a shim around NSUserNotification
+if [ "$(uname -s)" = "Darwin" ]; then
+  package+=(
+    "wezterm"
+    "terminal-notifier"
+  )
+fi
+
 for package in "${packages[@]}"; do
   if brew list "$package" &>/dev/null; then
     log "$package already installed"
   else
     log "Installing $package..."
-    brew install "$package"
+    brew install "$package" || warn "Failed to install $package - continuing"
   fi
 done
 

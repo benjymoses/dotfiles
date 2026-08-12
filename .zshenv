@@ -7,5 +7,5 @@ typeset -U path PATH
 export EDITOR="nvim"
 export SUDO_EDITOR="$EDITOR"
 
-# Machine-local environemnt (real file in $HOME, neve in dotfiles)
-[[ -if ~/.zshenv-local ]] && source ~/.zshenv-local
+# Machine-local environment (real file in $HOME, never in dotfiles)
+[[ -f ~/.zshenv-local ]] && source ~/.zshenv-local

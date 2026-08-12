@@ -32,7 +32,7 @@ herdr_plugins=(
   "JanTvrdik/herdr-command-palette"       # fzf command palette
   "nikok6/herdr-mirror"                   # mirror remote herdr workspaces locally
   "paulbkim-dev/vim-herdr-navigation"     # ctrl+hjkl across nvim splits and panes
-  "devashish2203/herdr-worktrunk"         # worktree picker driving worktrunk,
+  "devashish2203/herdr-worktrunk"         # worktree picker driving worktrunk
   "cesarferreira/herdr-palette"           # key bind palette
 )
 
