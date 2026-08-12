@@ -10,7 +10,7 @@ set -e
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # ── Language toolchains ───────────────────────────────────────────────────────
-# Versions come from .config/mise/config.toml (node, python, rust).
+# Versions come from .config/mise/config.toml (node, python, rust, bun).
 if command_exists mise; then
   log "Installing mise-managed tool versions..."
   mise install
@@ -32,7 +32,8 @@ herdr_plugins=(
   "JanTvrdik/herdr-command-palette"       # fzf command palette
   "nikok6/herdr-mirror"                   # mirror remote herdr workspaces locally
   "paulbkim-dev/vim-herdr-navigation"     # ctrl+hjkl across nvim splits and panes
-  "devashish2203/herdr-worktrunk"         # worktree picker driving worktrunk
+  "devashish2203/herdr-worktrunk"         # worktree picker driving worktrunk,
+  "cesarferreira/herdr-palette"           # key bind palette
 )
 
 if command_exists herdr; then

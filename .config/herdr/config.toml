@@ -123,3 +123,9 @@ key = "prefix+shift+d"
 type = "plugin_action"
 command = "worktrunk.remove"
 description = "Worktree: remove"
+
+[[keys.command]]
+key = "ctrl+space"
+type = "shell"
+command = "\"$HERDR_BIN_PATH\" plugin pane open --plugin cesarferreira.herdr-palette --entrypoint picker"
+description = "Open Herdr Palette"

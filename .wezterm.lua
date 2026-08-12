@@ -4,12 +4,12 @@ local config = wezterm.config_builder()
 config.font = wezterm.font("FiraCode Nerd Font Propo")
 config.font_size = 14
 
-config.initial_cols = 150
-config.initial_rows = 45
+config.initial_cols = 175
+config.initial_rows = 75
 
-config.enable_tab_bar = false
+config.enable_tab_bar = true
 config.window_decorations = "RESIZE"
-config.window_background_opacity = 0.9
+config.window_background_opacity = 0.95
 config.macos_window_background_blur = 15
 
 config.window_frame = {
@@ -17,10 +17,10 @@ config.window_frame = {
 	border_right_width = "0.5cell",
 	border_bottom_height = "0.25cell",
 	border_top_height = "0.75cell",
-	border_left_color = "black",
-	border_right_color = "black",
-	border_bottom_color = "black",
-	border_top_color = "black",
+	border_left_color = "#12081c",
+	border_right_color = "#12081c",
+	border_bottom_color = "#12081c",
+	border_top_color = "#12081c",
 }
 
 -- Fix for ALT+LEFT and ALT+RIGHT in MacOS
