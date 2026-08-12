@@ -20,14 +20,13 @@ else
 fi
 
 # Probe for Brew to get shellenv
+BREW=""
 for candidate in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
   [ -x "$candidate/bin/brew" ] && BREW="$candidate/bin/brew" && break
 done
 [ -n "$BREW" ] || { error "brew not found after install"; exit 1; }
 
 eval "$("$BREW" shellenv)"
-
-eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # ── Packages ──────────────────────────────────────────────────────────────────
 # NOTE: worktrunk installs a `wt` binary and conflicts with the `wiredtiger`
@@ -58,7 +57,7 @@ packages=(
 
 # macOS-only: a GUI terminal, and a shim around NSUserNotification
 if [ "$(uname -s)" = "Darwin" ]; then
-  package+=(
+  packages+=(
     "wezterm"
     "terminal-notifier"
   )

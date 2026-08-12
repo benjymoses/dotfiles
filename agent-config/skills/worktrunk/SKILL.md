@@ -129,21 +129,34 @@ The resolution is for the user to make the trust decision themselves:
 
 ## Advanced: agent handoffs
 
-When the user requests spawning a worktree with an agent in a background session ("spawn a worktree for...", "hand off to another agent"), use the appropriate pattern for their terminal multiplexer. Substitute `<agent-cli>` with the CLI you are running as: `claude` for Claude Code, `'opencode run'` for OpenCode.
+When the user requests spawning a worktree with an agent in a background session ("spawn a worktree for...", "hand off to another agent"), use the appropriate pattern for herdr. Substitute `<agent-cli>` with the CLI you are running as: `claude` for Claude Code, `'opencode run'` for OpenCode.
 
-**tmux** (check `$TMUX` env var):
+**herdr** (check `$HERDR_PANE_ID` env var - also gives you the current pane):
+
+herdr has no one-shot "run this command in a new session" form. Create the workspace, then start the agent in its pane and prompt it:
+
 ```bash
-tmux new-session -d -s <branch-name> "wt switch --create <branch-name> -x <agent-cli> -- '<task description>'"
+# herdr can own the git worktree itself
+herdr worktree create --branch <branch-name> --label <branch-name>
+
+# then find the new pane and start the agent in it
+herdr pane list
+herdr agent start <branch-name> --kind claude --pane <pane-id>
+herdr agent prompt <branch-name> '<task description>' --wait --until idle
 ```
 
-**Zellij** (check `$ZELLIJ` env var):
+`--kind` must be one of herdr's support agent kinds (`claude`, `codex`, `kiro`, `opencode`, `gemini`, and others - see `herdr agent start --help`). The pane must be sitting at an interactive shell prompt before `agent start`.
+
+It worktrunk should own the worktree instead, so its lifecycle hooks run, pre-create it and point a tab at the path:
+
 ```bash
-zellij run -- wt switch --create <branch-name> -x <agent-cli> -- '<task description>'
+wt switch --create <branch-name> --no-cd --no-hooks
+herdr tab create --cdw <worktree-path --label <branch-name> --no-focus
 ```
 
 **Requirements** (all must be true):
 - User explicitly requests spawning/handoff
-- User is in a supported multiplexer (tmux or Zellij)
+- User is in a supported multiplexer (herdr, tmux or Zellij)
 - The user's project instructions (`CLAUDE.md` or `AGENTS.md`) or an explicit prompt authorize this pattern
 
 **Do not use this pattern** for normal worktree operations.
