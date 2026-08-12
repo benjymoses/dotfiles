@@ -8,6 +8,7 @@ onboarding = false
 # New panes/tabs inherit the source pane's cwd. This is the default; set
 # explicitly to match tmux's -c "#{pane_current_path}".
 new_cwd = "follow"
+shell_mode = "login"
 
 [keys]
 prefix = "ctrl+a"

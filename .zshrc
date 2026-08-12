@@ -1,9 +1,11 @@
 # ~/.zshrc — interactive shells only.
 # Environment and PATH live in ~/.zshenv and ~/.zprofile.
 
-# Completions
-if [[ -d "/opt/homebrew/share/zsh/site-functions" ]]; then
-  fpath=("/opt/homebrew/share/zsh/site-functions" $fpath)
+# Completions for Homebrew. HOMEBREW_PREFIX is exported by
+# `brew shellenv` in .zprofile. Skip silently if this is 
+# not a login shell or brew is absent.
+if [[ -n "$HOMEBREW_PREFIX" && -d "$HOMEBREW_PREFIX/share/zsh/site-functions" ]]; then
+  fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
 fi
 
 autoload -Uz compinit
@@ -70,5 +72,7 @@ alias ls="eza --icons --color=always --group-directories-first"
 [[ -f ~/.zshrc-local ]] && source ~/.zshrc-local
 
 # Plugins (zsh-syntax-highlighting MUST be sourced last)
-source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+if [[ -n "$HOMEBREW_PREFIX" ]]; then
+  source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi

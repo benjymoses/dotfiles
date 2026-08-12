@@ -1,8 +1,17 @@
 # ~/.zprofile — login shells. Home for PATH and login-time environment.
 # Runs after macOS /etc/zprofile (path_helper), so PATH set here is not reordered.
 
-# Homebrew
-eval "$(/opt/homebrew/bin/brew shellenv)"
+# Homebrew. Prefix differs by platform (Apple Silicon, Intel macOS, Linux),
+# so probe rahter than hardcode. `brew shellenv` exports HOMEBREW_PREFIX, 
+# which .zshrc hen uses to find completions and plugins.
+
+for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+  if [[ -x "$_brew" ]]; then
+    eval "$("$_brew" shellenv)"
+    break
+  fi
+done
+unset _brew
 export HOMEBREW_NO_ENV_HINTS=1
 
 # User-local bins
