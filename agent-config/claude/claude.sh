@@ -121,17 +121,28 @@ if [ -d "$CLAUDE_DIR/agents" ]; then
   done
 fi
 
-# Link dotfiles-managed skills into ~/.claude/skills/
+# Link dotfiles-managed skills into ~/.claude/skills/ and ~/.kiro/skills
 mkdir -p "$HOME/.claude/skills"
+mkdir -p "$HOME/.kiro/skills"
+
 for skill_dir in "$AGENT_CONFIG_DIR/skills/"*/; do
   [ -d "$skill_dir" ] || continue
   skill_name=$(basename "$skill_dir")
+  # Claude
   if [ -e "$HOME/.claude/skills/$skill_name" ] && [ ! -L "$HOME/.claude/skills/$skill_name" ]; then
     warn "~/.claude/skills/$skill_name exists and is not a symlink — skipping"
     continue
   fi
   log "Linking skill '$skill_name'..."
   ln -sfn "${skill_dir%/}" "$HOME/.claude/skills/$skill_name"
+
+  # Kiro
+  if [ -e "$HOME/.kiro/skills/$skill_name" ] && [ ! -L "$HOME/.kiro/skills/$skill_name" ]; then
+    warn "~/.kiro/skills/$skill_name exists and is not a symlink — skipping"
+    continue
+  fi
+  log "Linking skill '$skill_name'..."
+  ln -sfn "${skill_dir%/}" "$HOME/.kiro/skills/$skill_name"
 done
 
 # Link OpenSpec user-level schemas (resolution: project → user → package).
